@@ -1216,11 +1216,11 @@ form {
 
         <ul class="contact-list">
           <li>
-            <a href="mailto:vandervyverzed@gmail.com">
+            <a href="mailto:info@zzdigital.awsapps.com">
               <span class="ico" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="M3 7l9 6 9-6"/></svg>
               </span>
-              <span><small data-i18n="contact.email.label">Email</small><strong>vandervyverzed@gmail.com</strong></span>
+              <span><small data-i18n="contact.email.label">Email</small><strong>info@zzdigital.awsapps.com</strong></span>
             </a>
           </li>
           <li>
@@ -1243,6 +1243,8 @@ form {
       </div>
 
       <form id="brief" data-reveal style="--d:100ms" novalidate>
+        <input type="hidden" name="access_key" value="db30683a-8dda-4544-b021-41ef6c0607e8">
+        <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
         <div class="field-row">
           <div class="field">
             <label for="f-name" data-i18n="form.name">Your name</label>
@@ -1339,7 +1341,7 @@ form {
     <div>
       <h4 data-i18n="footer.touch">Get in touch</h4>
       <ul>
-        <li><a href="mailto:vandervyverzed@gmail.com" data-i18n="contact.email.label">Email</a></li>
+        <li><a href="mailto:info@zzdigital.awsapps.com" data-i18n="contact.email.label">Email</a></li>
         <li><a href="tel:+66839696555">+66 83 9696 555</a></li>
         <li><a href="#contact" data-i18n="footer.brief">Project brief</a></li>
         <li><a href="#faq" data-i18n="nav.faq">FAQ</a></li>
@@ -1683,8 +1685,18 @@ form {
     });
   });
 
-  /* ── enquiry form → composes an email ──────────── */
+  /* ── enquiry form → sends via Web3Forms ────────── */
   const form = $("#brief"), msg = $("#form-msg");
+  const FORM_MSG = {
+    sending: { en: "Sending your enquiry…", th: "กำลังส่งคำสอบถามของคุณ…" },
+    sent:    { en: "Thanks — your enquiry is on its way. I'll reply within 24 hours.", th: "ขอบคุณครับ — ส่งคำสอบถามเรียบร้อยแล้ว ผมจะตอบกลับภายใน 24 ชั่วโมง" },
+    fail:    { en: "Something went wrong sending that. Please email info@zzdigital.awsapps.com directly.", th: "เกิดข้อผิดพลาดในการส่ง กรุณาส่งอีเมลถึง info@zzdigital.awsapps.com โดยตรง" }
+  };
+  const tint = (el, color) => {
+    el.style.background  = color ? `color-mix(in oklab, var(--${color}) 14%, transparent)` : "";
+    el.style.borderColor = color ? `color-mix(in oklab, var(--${color}) 40%, transparent)` : "";
+  };
+
   form.addEventListener("submit", e => {
     e.preventDefault();
 
@@ -1693,30 +1705,47 @@ form {
     if (invalid) {
       invalid.focus();
       msg.hidden = false;
-      msg.style.background = "color-mix(in oklab, var(--amber) 14%, transparent)";
-      msg.style.borderColor = "color-mix(in oklab, var(--amber) 40%, transparent)";
+      tint(msg, "amber");
       msg.textContent = FORM_ERR[curLang] || FORM_ERR.en;
       return;
     }
 
+    const submitBtn = $("button[type='submit']", form);
     const d = Object.fromEntries(new FormData(form));
-    const body = [
-      `Name: ${d.name}`,
-      `Business: ${d.business || "—"}`,
-      `Email: ${d.email}`,
-      `Service: ${d.service}`,
-      "",
-      d.message
-    ].join("\n");
+    const payload = {
+      access_key: d.access_key,
+      subject: `New enquiry — ${d.service}`,
+      from_name: `${d.name}${d.business ? ` (${d.business})` : ""}`,
+      name: d.name,
+      business: d.business || "—",
+      email: d.email,
+      service: d.service,
+      message: d.message,
+      botcheck: d.botcheck || ""
+    };
 
+    submitBtn.disabled = true;
     msg.hidden = false;
-    msg.style.background = "";
-    msg.style.borderColor = "";
-    msg.textContent = "Opening your email app with the enquiry ready to send. If nothing happens, email vandervyverzed@gmail.com directly.";
+    tint(msg, null);
+    msg.textContent = FORM_MSG.sending[curLang] || FORM_MSG.sending.en;
 
-    location.href = "mailto:vandervyverzed@gmail.com"
-      + `?subject=${encodeURIComponent(`New enquiry — ${d.service}`)}`
-      + `&body=${encodeURIComponent(body)}`;
+    fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) throw new Error(data.message || "failed");
+        form.reset();
+        tint(msg, "mint");
+        msg.textContent = FORM_MSG.sent[curLang] || FORM_MSG.sent.en;
+      })
+      .catch(() => {
+        tint(msg, "amber");
+        msg.textContent = FORM_MSG.fail[curLang] || FORM_MSG.fail.en;
+      })
+      .finally(() => { submitBtn.disabled = false; });
   });
 })();
 </script>
