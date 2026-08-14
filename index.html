@@ -1097,7 +1097,6 @@ form {
         <h3 data-i18n="plan2.title">Website</h3>
         <p data-i18n="plan2.desc">A complete site for your business, built to be found.</p>
         <div class="amount"><span class="from" data-i18n="price.from">from</span> <b data-thb="฿20,000" data-usd="$570">฿20,000</b></div>
-        <p class="upkeep">+ <span data-thb="฿1,000" data-usd="$29">฿1,000</span> <span data-i18n="plan2.upkeep">/ month upkeep (optional)</span></p>
         <ul class="feat">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg> <span data-i18n="plan2.f1">Up to 6 pages, mobile-first</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg> <span data-i18n="plan2.f2">Enquiry form, maps, socials</span></li>
@@ -1471,7 +1470,6 @@ form {
     "plan2.flag": "เลือกมากที่สุด",
     "plan2.title": "เว็บไซต์",
     "plan2.desc": "เว็บไซต์ครบวงจรสำหรับธุรกิจของคุณ สร้างมาเพื่อให้ถูกค้นเจอ",
-    "plan2.upkeep": "/ เดือน ค่าดูแล (ไม่บังคับ)",
     "plan2.f1": "สูงสุด 6 หน้า ออกแบบมือถือก่อน",
     "plan2.f2": "แบบฟอร์มสอบถาม แผนที่ โซเชียล",
     "plan2.f3": "ตั้งค่า Google Business + Analytics",
@@ -1580,7 +1578,12 @@ form {
     store.set("zz-lang", lang);
   };
   langOpts.forEach(b => b.addEventListener("click", () => applyLang(b.dataset.lang)));
-  if (store.get("zz-lang") === "th") applyLang("th");
+  const savedLang = store.get("zz-lang");
+  if (savedLang === "th" || savedLang === "en") {
+    applyLang(savedLang);                       // respect the visitor's saved choice
+  } else if ((navigator.languages || [navigator.language || ""]).some(l => /^th/i.test(l))) {
+    applyLang("th");                            // otherwise default to Thai for Thai-language browsers
+  }
 
   /* ── year ──────────────────────────────────────── */
   $("#year").textContent = new Date().getFullYear();
