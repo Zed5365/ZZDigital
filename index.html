@@ -505,6 +505,12 @@ section[id] { padding-block: var(--section); }
 .shot-1 { background: linear-gradient(150deg, #0b3d5c, #1d7fa8 55%, #7fd4e8); }
 .shot-2 { background: linear-gradient(150deg, #5c1f0b, #d1611c 55%, #ffc46b); }
 .shot-3 { background: linear-gradient(150deg, #1e0b45, #6d3ad1 55%, #33e0c0); }
+.shot--img::after { display: none; }
+.shot--img img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+}
 
 .shot-inner {
   position: relative; z-index: 1;
@@ -972,13 +978,8 @@ form {
 
     <div class="work-grid">
       <article class="project" data-reveal>
-        <div class="shot shot-2" aria-hidden="true">
-          <div class="shot-inner">
-            <div class="row"><i></i><i></i><i></i></div>
-            <div class="blk w40"></div>
-            <div class="blk"></div><div class="blk w60"></div>
-            <div class="blk"></div><div class="blk w60"></div>
-          </div>
+        <div class="shot shot-2 shot--img">
+          <img src="https://zzdigital-website-images.s3.us-east-1.amazonaws.com/Screenshot%202026-08-14%20091913.png" alt="ReviewSlip dashboard screenshot" loading="lazy" decoding="async">
         </div>
         <div class="project-body">
           <p class="project-kind" data-i18n="proj1.kind">SaaS · Web app</p>
