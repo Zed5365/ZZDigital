@@ -98,6 +98,9 @@ html = replaceOne(html,
   '<a class="lang-opt" href="/th/" data-lang="th" hreflang="th">ไทย</a>',
   '<a class="lang-opt is-active" href="/th/" data-lang="th" hreflang="th" aria-current="true">ไทย</a>', "lang-opt TH active on");
 
+/* 9b. Rewrite internal service links to the Thai tree (/services/… → /th/services/…) */
+html = html.split('href="/services/').join('href="/th/services/');
+
 /* 10. Write output */
 const outDir = path.join(ROOT, "th");
 fs.mkdirSync(outDir, { recursive: true });

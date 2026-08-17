@@ -547,6 +547,8 @@ section[id] { padding-block: var(--section); }
 .card:hover::before { opacity: 1; }
 .card h3 { font-size: 1.15rem; margin-block: 1.1rem .55rem; letter-spacing: -.02em; }
 .card p { color: var(--text-soft); font-size: .9375rem; }
+.card-link { display: inline-block; margin-block-start: 1rem; font-size: .9rem; font-weight: 560; color: var(--accent); text-decoration: none; }
+.card-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 .ico {
   width: 2.75rem; height: 2.75rem;
@@ -1026,6 +1028,7 @@ form {
         <h3 data-i18n="svc1.title">ออกแบบและสร้างเว็บไซต์</h3>
         <p data-i18n="svc1.desc">เว็บไซต์ครบวงจรสำหรับธุรกิจของคุณ: หน้าแรก บริการ แกลเลอรี ติดต่อ แผนที่ และแบบฟอร์มจองหรือสอบถามที่ส่งตรงถึงอีเมลคุณ</p>
         <div class="tags"><span class="tag" data-i18n="svc1.tag1">รองรับทุกหน้าจอ</span><span class="tag" data-i18n="svc1.tag2">SEO พื้นฐาน</span><span class="tag">Analytics</span></div>
+        <a class="card-link" href="/th/services/web-design/" data-i18n="svc1.more">รับทำเว็บไซต์เชียงใหม่ →</a>
       </article>
 
       <article class="card" data-reveal data-tilt style="--d:80ms">
@@ -1421,7 +1424,7 @@ form {
     <div>
       <h4 data-i18n="footer.services">บริการ</h4>
       <ul>
-        <li><a href="#pricing" data-i18n="footer.svc.web">เว็บไซต์</a></li>
+        <li><a href="/th/services/web-design/" data-i18n="footer.svc.web">เว็บไซต์</a></li>
         <li><a href="#pricing" data-i18n="footer.svc.hosting">โฮสติ้งและดูแลเว็บ</a></li>
         <li><a href="#pricing" data-i18n="footer.svc.logo">โลโก้และแบรนด์</a></li>
         <li><a href="#services" data-i18n="footer.svc.seo">SEO ท้องถิ่น</a></li>
@@ -1510,6 +1513,7 @@ form {
     "svc1.desc": "เว็บไซต์ครบวงจรสำหรับธุรกิจของคุณ: หน้าแรก บริการ แกลเลอรี ติดต่อ แผนที่ และแบบฟอร์มจองหรือสอบถามที่ส่งตรงถึงอีเมลคุณ",
     "svc1.tag1": "รองรับทุกหน้าจอ",
     "svc1.tag2": "SEO พื้นฐาน",
+    "svc1.more": "รับทำเว็บไซต์เชียงใหม่ →",
     "svc2.title": "โลโก้และชุดแบรนด์",
     "svc2.desc": "โลโก้ที่สะอาดตาและใช้งานได้ทุกไฟล์ที่คุณต้องการ พร้อมสี ฟอนต์ และคู่มือหนึ่งหน้า เพื่อให้ป้าย โซเชียล และเว็บของคุณเข้าชุดกัน",
     "svc2.tag2": "ชุดสี",
