@@ -26,7 +26,7 @@ const replaceOne = (html, find, repl, label) => {
 };
 
 /* Thai metadata (hand-written — refine as needed). */
-const TH_TITLE   = "ZZDigital — รับทำเว็บไซต์และแบรนด์สำหรับธุรกิจในไทย";
+const TH_TITLE   = "รับทำเว็บไซต์ เชียงใหม่ &amp; ทั่วไทย — ZZDigital";
 const TH_DESC    = "ZZDigital สตูดิโอดิจิทัลในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้และโฮสติ้ง สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย เริ่มต้น ฿3,000";
 const TH_OG_DESC = "เว็บไซต์ โลโก้ และโฮสติ้งที่สร้างด้วยมือ โหลดเร็ว สำหรับธุรกิจในเชียงใหม่และทั่วไทย เริ่มต้น ฿3,000";
 const TH_TW_DESC = "เว็บไซต์และโลโก้ที่สร้างด้วยมือ เปิดตัวได้ในสองสัปดาห์";
@@ -72,8 +72,8 @@ Object.keys(TH).forEach(key => {
 });
 
 /* 6. Title + social meta */
-html = replaceOne(html, "ZZDigital — Websites &amp; brands for businesses in Thailand", TH_TITLE, "title/og:title/twitter:title");
-html = replaceOne(html, "ZZDigital is a small digital studio in Thailand building fast, hand-built websites and logos for restaurants, resorts and local businesses. From ฿3,000.", TH_DESC, "meta description");
+html = replaceOne(html, "Web Design in Chiang Mai &amp; Thailand — ZZDigital", TH_TITLE, "title/og:title/twitter:title");
+html = replaceOne(html, "Fast, hand-built websites, logos and hosting for restaurants, resorts and local businesses in Chiang Mai and across Thailand. Launch in two weeks — from ฿3,000.", TH_DESC, "meta description");
 html = replaceOne(html, "Fast, hand-built websites, logos and hosting for restaurants, resorts and local businesses in Chiang Mai and across Thailand. From ฿3,000.", TH_OG_DESC, "og:description");
 html = replaceOne(html, "Fast, hand-built websites, logos and hosting. Launch in two weeks.", TH_TW_DESC, "twitter:description");
 
