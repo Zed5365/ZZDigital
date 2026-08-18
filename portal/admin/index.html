@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — ZZ Digital</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0a0a0f" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%236d5efc'/><path d='M28 32h44L34 68h40' stroke='%23fff' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<style>
+:root{--bg:#fbfaf8;--surface:#fff;--surface-2:#f7f5f2;--text:#131118;--text-soft:#4a4652;--text-muted:#7b7684;--line:#e6e2dc;--line-strong:#d5d0c8;--accent:#6d5efc;--accent-ink:#fff;--grad:linear-gradient(100deg,#6d5efc,#8b5cf6 38%,#0fb894);--mint:#0fb894;--red:#d64545;--r-lg:18px;--r-sm:10px;--shadow-sm:0 1px 2px rgba(19,17,24,.06),0 2px 8px rgba(19,17,24,.04);--pad:clamp(1rem,4vw,2rem);--font:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0a0f;--surface:#12121b;--surface-2:#191924;--text:#f4f3f8;--text-soft:#bdb9c9;--text-muted:#8d889c;--line:#23232f;--line-strong:#33333f;--accent:#8b7dff;--grad:linear-gradient(100deg,#8b7dff,#a78bfa 38%,#2ee0b5);--mint:#2ee0b5;--shadow-sm:0 1px 2px rgba(0,0,0,.5);}}
+:root[data-theme="dark"]{--bg:#0a0a0f;--surface:#12121b;--surface-2:#191924;--text:#f4f3f8;--text-soft:#bdb9c9;--text-muted:#8d889c;--line:#23232f;--line-strong:#33333f;--accent:#8b7dff;--grad:linear-gradient(100deg,#8b7dff,#a78bfa 38%,#2ee0b5);--mint:#2ee0b5;--shadow-sm:0 1px 2px rgba(0,0,0,.5);}
+*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.55}
+a{color:inherit}.shell{max-width:68rem;margin-inline:auto;padding-inline:var(--pad)}
+.topbar{display:flex;align-items:center;gap:1rem;height:4rem;border-bottom:1px solid var(--line)}
+.brand{display:inline-flex;align-items:center;gap:.5rem;font-weight:680;text-decoration:none;margin-inline-end:auto}
+.mark{width:28px;height:28px;border-radius:8px;background:var(--grad);display:grid;place-items:center}.mark svg{width:17px;height:17px}
+.tag{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid var(--line);border-radius:100px;padding:.15rem .5rem}
+.btn{display:inline-flex;align-items:center;gap:.4rem;font:inherit;font-weight:560;font-size:.9rem;text-decoration:none;padding:.55rem 1rem;border-radius:100px;border:0;cursor:pointer}
+.btn--primary{background:var(--accent);color:var(--accent-ink)}.btn--ghost{border:1px solid var(--line-strong);color:var(--text);background:transparent}
+.btn--sm{padding:.4rem .7rem;font-size:.82rem}.btn[disabled]{opacity:.55}
+input,textarea,select{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:.55rem .7rem;width:100%}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);border-color:transparent}
+label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margin-bottom:.25rem}
+.field{margin-bottom:.8rem}.row{display:grid;gap:.7rem;grid-template-columns:1fr 1fr}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
+.panel{padding:1.3rem;margin-bottom:1.1rem}.panel h2{font-size:1.05rem;margin-bottom:.8rem}
+.hidden{display:none!important}.muted{color:var(--text-muted);font-size:.88rem}
+.list{list-style:none}.list li{border:1px solid var(--line);border-radius:var(--r-sm);padding:.8rem 1rem;margin-bottom:.5rem;cursor:pointer;display:flex;justify-content:space-between;gap:1rem;align-items:center}
+.list li:hover{border-color:var(--line-strong)}.list li b{font-size:.98rem}
+.pill{font-size:.72rem;font-weight:650;padding:.2rem .6rem;border-radius:100px;background:var(--surface-2);color:var(--text-soft);white-space:nowrap}
+.back{background:none;border:0;color:var(--text-muted);cursor:pointer;font:inherit;font-size:.85rem;padding:.3rem 0;margin-block:1.1rem .3rem}
+.head{padding-block:1.4rem .6rem}.head h1{font-size:1.35rem;letter-spacing:-.02em}
+.note{font-size:.85rem;padding:.55rem .8rem;border-radius:var(--r-sm);margin-top:.7rem}
+.note.err{background:color-mix(in oklab,var(--red) 14%,transparent);color:var(--red)}
+.note.ok{background:color-mix(in oklab,var(--mint) 16%,transparent);color:var(--mint)}
+.msg{padding:.6rem .85rem;border-radius:var(--r-sm);margin-bottom:.5rem;font-size:.9rem;max-width:85%}
+.msg.studio{background:color-mix(in oklab,var(--accent) 14%,transparent);margin-left:auto}.msg.client{background:var(--surface-2)}
+.msg .who{font-size:.72rem;color:var(--text-muted);margin-bottom:.2rem}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(6rem,1fr));gap:.5rem;margin-top:.6rem}
+.thumb{aspect-ratio:4/3;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--surface-2)}.thumb img{width:100%;height:100%;object-fit:cover}
+.inline{display:flex;gap:.5rem}.inline input{flex:1}
+.login-wrap{min-height:calc(100vh - 4rem);display:grid;place-items:center;padding:2rem 1rem}.login-card{width:100%;max-width:23rem;padding:1.8rem}
+</style>
+</head>
+<body>
+<div class="shell"><div class="topbar">
+  <a class="brand" href="/portal/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
+  <span class="tag">Admin</span>
+  <button class="btn btn--ghost btn--sm hidden" id="signout">Sign out</button>
+</div></div>
+
+<!-- login -->
+<section id="view-login" class="hidden"><div class="login-wrap"><div class="card login-card">
+  <h1 style="font-size:1.3rem;margin-bottom:.3rem">Admin sign in</h1>
+  <p class="muted" style="margin-bottom:1.2rem">Staff access only.</p>
+  <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email"></div>
+  <div class="field"><label>Password</label><input id="pw" type="password" autocomplete="current-password"></div>
+  <button class="btn btn--primary" style="width:100%" id="signin">Sign in</button>
+  <div id="login-msg"></div>
+</div></div></section>
+
+<!-- denied -->
+<section id="view-denied" class="hidden"><div class="shell" style="padding-block:4rem;text-align:center">
+  <h1 style="font-size:1.3rem;margin-bottom:.5rem">Not authorised</h1>
+  <p class="muted">This area is for ZZ Digital staff. If that's you, ask to be added as an admin.</p>
+  <p style="margin-top:1.2rem"><button class="btn btn--ghost btn--sm" id="signout2">Sign out</button></p>
+</div></section>
+
+<!-- app -->
+<section id="view-app" class="hidden">
+  <!-- clients -->
+  <div class="shell" id="v-clients">
+    <div class="head"><h1>Clients</h1><p class="muted">Pick a client to manage their projects and messages.</p></div>
+    <ul class="list" id="client-list"></ul>
+    <p class="muted" id="no-clients"></p>
+  </div>
+
+  <!-- one client -->
+  <div class="shell hidden" id="v-client">
+    <button class="back" id="back-clients">← All clients</button>
+    <div class="head"><h1 id="c-name">Client</h1><p class="muted" id="c-sub"></p></div>
+    <div class="card panel">
+      <h2>Projects</h2>
+      <ul class="list" id="proj-list"></ul>
+      <p class="muted" id="no-proj"></p>
+    </div>
+    <div class="card panel">
+      <h2>New project</h2>
+      <div class="field"><label>Title</label><input id="np-title" placeholder="Baanpong Café website"></div>
+      <div class="row">
+        <div class="field"><label>Kind</label><input id="np-kind" placeholder="Website"></div>
+        <div class="field"><label>Status</label>
+          <select id="np-status"><option>In build</option><option>In review</option><option>Live</option><option>On hold</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Web address (optional)</label><input id="np-url" placeholder="example.com"></div>
+        <div class="field"><label>Next step (optional)</label><input id="np-next" placeholder="Send 3 food photos"></div>
+      </div>
+      <button class="btn btn--primary btn--sm" id="create-proj">Create project</button>
+      <div id="np-msg"></div>
+    </div>
+  </div>
+
+  <!-- one project -->
+  <div class="shell hidden" id="v-project">
+    <button class="back" id="back-client">← Back</button>
+    <div class="head"><h1 id="p-title">Project</h1><p class="muted" id="p-client"></p></div>
+    <div class="card panel">
+      <h2>Status &amp; info</h2>
+      <div class="row">
+        <div class="field"><label>Status</label><select id="p-status"><option>In build</option><option>In review</option><option>Live</option><option>On hold</option></select></div>
+        <div class="field"><label>Web address</label><input id="p-url"></div>
+      </div>
+      <div class="field"><label>Next step</label><input id="p-next"></div>
+      <button class="btn btn--primary btn--sm" id="save-proj">Save</button>
+      <div id="p-msg"></div>
+    </div>
+    <div class="card panel">
+      <h2>Client's brief &amp; notes</h2>
+      <p class="muted" style="margin-bottom:.3rem">What the project is</p><p id="p-brief">—</p>
+      <p class="muted" style="margin:.8rem 0 .3rem">Notes</p><p id="p-notes">—</p>
+    </div>
+    <div class="card panel"><h2>Images</h2><div class="thumbs" id="p-thumbs"></div><p class="muted" id="no-img"></p></div>
+    <div class="card panel">
+      <h2>Messages</h2>
+      <div id="thread"></div>
+      <div class="inline" style="margin-top:.7rem"><input id="reply" placeholder="Reply as ZZ Digital…"><button class="btn btn--primary btn--sm" id="send">Send</button></div>
+    </div>
+  </div>
+</section>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const sb = createClient("https://vdgdbjesjoyfkfhqgdna.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkZ2RiamVzam95ZmtmaHFnZG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMTczMzAsImV4cCI6MjEwMjU5MzMzMH0.usS1Yo5QgB9cv18gYN-iqIyGwjkhJUposL57c4_aiz8");
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const note=(el,k,t)=>{el.innerHTML=`<div class="note ${k}">${esc(t)}</div>`;};
+const store={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);}catch{}}};
+document.documentElement.dataset.theme=store.get("zz-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+let selClient=null, selProject=null;
+
+const show=v=>{ ["login","denied","app"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v)); };
+const sub=v=>{ ["clients","client","project"].forEach(x=>$("#v-"+x).classList.toggle("hidden",x!==v)); };
+
+$("#signin").addEventListener("click", async ()=>{
+  const email=$("#email").value.trim(), pw=$("#pw").value;
+  if(!email||!pw) return note($("#login-msg"),"err","Enter email and password.");
+  $("#signin").disabled=true; note($("#login-msg"),"","");
+  const { error }=await sb.auth.signInWithPassword({email,password:pw});
+  $("#signin").disabled=false;
+  if(error) note($("#login-msg"),"err",error.message);
+});
+const signOut=async()=>{ await sb.auth.signOut(); };
+$("#signout").addEventListener("click",signOut); $("#signout2").addEventListener("click",signOut);
+
+sb.auth.onAuthStateChange((_e,session)=>{ session?gate():show("login"); });
+
+async function gate(){
+  const { data:isAdmin, error }=await sb.rpc("is_admin");
+  if(error||!isAdmin){ show("denied"); $("#signout").classList.add("hidden"); return; }
+  $("#signout").classList.remove("hidden"); show("app"); loadClients();
+}
+
+async function loadClients(){
+  sub("clients");
+  const { data, error }=await sb.from("clients").select("*").order("created_at");
+  if(error){ $("#no-clients").textContent=error.message; return; }
+  if(!data.length){ $("#client-list").innerHTML=""; $("#no-clients").textContent="No clients yet."; return; }
+  $("#no-clients").textContent="";
+  $("#client-list").innerHTML=data.map(c=>`<li data-id="${c.id}"><span><b>${esc(c.business||c.name)}</b><br><span class="muted">${esc(c.email||c.name)}</span></span></li>`).join("");
+  $$("#client-list li").forEach(li=>li.addEventListener("click",()=>openClient(data.find(c=>c.id===li.dataset.id))));
+}
+async function openClient(c){
+  selClient=c; sub("client"); window.scrollTo(0,0);
+  $("#c-name").textContent=c.business||c.name; $("#c-sub").textContent=c.email||"";
+  const { data:projects }=await sb.from("projects").select("*").eq("client_id",c.id).order("created_at");
+  if(!projects||!projects.length){ $("#proj-list").innerHTML=""; $("#no-proj").textContent="No projects yet."; }
+  else{ $("#no-proj").textContent="";
+    $("#proj-list").innerHTML=projects.map(p=>`<li data-id="${p.id}"><b>${esc(p.title)}</b><span class="pill">${esc(p.status||"")}</span></li>`).join("");
+    $$("#proj-list li").forEach(li=>li.addEventListener("click",()=>openProject(projects.find(p=>p.id===li.dataset.id))));
+  }
+}
+$("#back-clients").addEventListener("click",loadClients);
+$("#create-proj").addEventListener("click", async ()=>{
+  const title=$("#np-title").value.trim(); if(!title) return note($("#np-msg"),"err","Title is required.");
+  $("#create-proj").disabled=true;
+  const { error }=await sb.from("projects").insert({client_id:selClient.id,title,kind:$("#np-kind").value.trim()||null,status:$("#np-status").value,web_url:$("#np-url").value.trim()||null,next_step:$("#np-next").value.trim()||null});
+  $("#create-proj").disabled=false;
+  if(error) return note($("#np-msg"),"err",error.message);
+  ["#np-title","#np-kind","#np-url","#np-next"].forEach(s=>$(s).value=""); note($("#np-msg"),"ok","Project created."); openClient(selClient);
+});
+
+async function openProject(p){
+  selProject=p; sub("project"); window.scrollTo(0,0);
+  $("#p-title").textContent=p.title; $("#p-client").textContent=(selClient.business||selClient.name);
+  $("#p-status").value=p.status||"In build"; $("#p-url").value=p.web_url||""; $("#p-next").value=p.next_step||"";
+  $("#p-brief").textContent=p.brief||"—"; $("#p-notes").textContent=p.notes||"—"; $("#p-msg").innerHTML="";
+  const { data:imgs }=await sb.from("project_images").select("*").eq("project_id",p.id).order("created_at");
+  $("#p-thumbs").innerHTML=(imgs||[]).map(im=>`<div class="thumb"><img src="${esc(im.url)}" onerror="this.style.opacity=.2"></div>`).join("");
+  $("#no-img").textContent=(imgs&&imgs.length)?"":"No images yet.";
+  loadThread();
+}
+$("#back-client").addEventListener("click",()=>openClient(selClient));
+$("#save-proj").addEventListener("click", async ()=>{
+  $("#save-proj").disabled=true;
+  const { error }=await sb.from("projects").update({status:$("#p-status").value,web_url:$("#p-url").value.trim()||null,next_step:$("#p-next").value.trim()||null}).eq("id",selProject.id);
+  $("#save-proj").disabled=false;
+  note($("#p-msg"),error?"err":"ok",error?error.message:"Saved."); selProject.status=$("#p-status").value;
+});
+async function loadThread(){
+  const { data:msgs }=await sb.from("support_messages").select("*").eq("project_id",selProject.id).order("created_at");
+  $("#thread").innerHTML=(msgs&&msgs.length)?msgs.map(m=>`<div class="msg ${m.sender}"><div class="who">${m.sender==="studio"?"ZZ Digital":esc(selClient.name)}</div>${esc(m.body)}</div>`).join(""):`<p class="muted">No messages yet.</p>`;
+}
+$("#send").addEventListener("click", async ()=>{
+  const body=$("#reply").value.trim(); if(!body) return;
+  const { error }=await sb.from("support_messages").insert({client_id:selClient.id,project_id:selProject.id,sender:"studio",body});
+  if(error) return alert(error.message);
+  $("#reply").value=""; loadThread();
+});
+
+(async()=>{ const { data:{session} }=await sb.auth.getSession(); session?gate():show("login"); })();
+</script>
+</body>
+</html>
