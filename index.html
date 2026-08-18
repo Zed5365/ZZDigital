@@ -361,6 +361,8 @@ p { text-wrap: pretty; }
   transition: color .2s, background-color .2s;
 }
 .nav a:hover { color: var(--text); background: var(--surface-2); }
+.nav-login { border: 1px solid var(--line-strong); border-radius: 100px; }
+.nav-login:hover { border-color: var(--accent); color: var(--accent) !important; background: transparent !important; }
 .nav a[aria-current="true"] { color: var(--text); font-weight: 600; }
 
 .icon-btn {
@@ -932,6 +934,7 @@ form {
       <a href="#process" data-i18n="nav.process">Process</a>
       <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
       <a href="#faq" data-i18n="nav.faq">FAQ</a>
+      <a class="nav-login" href="/portal/" data-i18n="nav.login">Log in</a>
     </nav>
 
     <div class="lang-switch" role="group" aria-label="Language / ภาษา">
@@ -1499,6 +1502,7 @@ form {
     "nav.process": "ขั้นตอน",
     "nav.pricing": "ราคา",
     "nav.faq": "คำถามที่พบบ่อย",
+    "nav.login": "เข้าสู่ระบบ",
     "nav.start": "เริ่มโปรเจกต์",
     "hero.title": "สตูดิโอเล็ก ๆ<br><span class=\"grad\">เว็บไซต์ที่จริงจัง</span>",
     "hero.lede": "ZZDigital สร้างเว็บไซต์และแบรนด์ที่สวยงามและโหลดเร็ว สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วประเทศไทย — และที่ไหนก็ตามที่มีอินเทอร์เน็ตดี ๆ ไม่ใช้เครื่องมือสำเร็จรูป ไม่มีส่วนเกิน ไม่มีค่าใช้จ่ายแอบแฝงรายเดือน",
