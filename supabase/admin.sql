@@ -45,5 +45,5 @@ drop policy if exists messages_admin_all on public.support_messages;
 create policy messages_admin_all on public.support_messages for all using (public.is_admin()) with check (public.is_admin());
 
 -- ── 4. Make YOURSELF an admin ────────────────────────────
--- Find your user UUID in Authentication → Users, then run (uncomment):
--- insert into public.admins (user_id) values ('YOUR-USER-UUID') on conflict do nothing;
+-- Zed's user (Quickeasy Asia / ZZ Digital):
+insert into public.admins (user_id) values ('a1065e25-66e6-4309-8d5d-e673249123bd') on conflict do nothing;
