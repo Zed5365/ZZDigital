@@ -16,6 +16,10 @@
 a{color:inherit}.shell{max-width:68rem;margin-inline:auto;padding-inline:var(--pad)}
 .topbar{display:flex;align-items:center;gap:1rem;height:4rem;border-bottom:1px solid var(--line)}
 .brand{display:inline-flex;align-items:center;gap:.5rem;font-weight:680;text-decoration:none;margin-inline-end:auto}
+.nav{display:flex;gap:.15rem;align-items:center}
+.nav a{color:var(--text-soft);text-decoration:none;font-size:.88rem;font-weight:520;padding:.4rem .55rem;border-radius:8px}
+.nav a:hover{color:var(--text);background:var(--surface-2)}
+@media(max-width:860px){.nav{display:none}}
 .mark{width:28px;height:28px;border-radius:8px;background:var(--grad);display:grid;place-items:center}.mark svg{width:17px;height:17px}
 .tag{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid var(--line);border-radius:100px;padding:.15rem .5rem}
 .btn{display:inline-flex;align-items:center;gap:.4rem;font:inherit;font-weight:560;font-size:.9rem;text-decoration:none;padding:.55rem 1rem;border-radius:100px;border:0;cursor:pointer}
@@ -48,6 +52,9 @@ label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margi
 <body>
 <div class="shell"><div class="topbar">
   <a class="brand" href="/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
+  <nav class="nav">
+    <a href="/#services">Services</a><a href="/#work">Work</a><a href="/#process">Process</a><a href="/#pricing">Pricing</a><a href="/#faq">FAQ</a>
+  </nav>
   <span class="tag">Admin</span>
   <button class="btn btn--ghost btn--sm hidden" id="signout">Sign out</button>
 </div></div>
