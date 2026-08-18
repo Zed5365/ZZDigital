@@ -95,12 +95,14 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
   <div class="login-wrap"><div class="card login-card">
     <h1 id="login-title">Client sign in</h1>
     <p class="sub" id="login-sub">Manage your projects, share details and images, and message support.</p>
+    <div class="field hidden" id="f-name"><label for="name">Your name</label><input id="name" type="text" placeholder="Somchai P." autocomplete="name"></div>
+    <div class="field hidden" id="f-biz"><label for="biz">Business (optional)</label><input id="biz" type="text" placeholder="Baanpong Café" autocomplete="organization"></div>
     <div class="field"><label for="email">Email</label><input id="email" type="email" placeholder="you@business.com" autocomplete="email"></div>
     <div class="field" id="pw-field"><label for="pw">Password</label><input id="pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
     <button class="btn btn--primary" style="width:100%" id="signin">Sign in</button>
     <div id="login-msg"></div>
     <p style="margin-top:1rem;text-align:center"><button class="linkbtn" id="forgot">Forgot your password?</button></p>
-    <p class="muted" style="margin-top:.6rem;text-align:center;font-size:.78rem">Accounts are created by ZZ Digital. Need access? <a href="/#contact" style="color:var(--accent)">Contact us</a>.</p>
+    <p class="muted" style="margin-top:.8rem;text-align:center;font-size:.82rem"><span id="toggle-prompt">New here?</span> <button class="linkbtn" id="toggle-mode">Create an account</button></p>
   </div></div>
 </section>
 
@@ -186,12 +188,38 @@ function show(view){
 }
 
 // ── auth ──────────────────────────────────────────────
+let mode = "signin";
+function setMode(m){
+  mode = m; const su = m === "signup";
+  $("#login-title").textContent = su ? "Create your account" : "Client sign in";
+  $("#login-sub").textContent = su ? "Set up access to your projects with ZZ Digital." : "Manage your projects, share details and images, and message support.";
+  $("#f-name").classList.toggle("hidden", !su);
+  $("#f-biz").classList.toggle("hidden", !su);
+  $("#signin").textContent = su ? "Create account" : "Sign in";
+  $("#forgot").closest("p").classList.toggle("hidden", su);
+  $("#toggle-prompt").textContent = su ? "Already have an account?" : "New here?";
+  $("#toggle-mode").textContent = su ? "Sign in" : "Create an account";
+  $("#login-msg").innerHTML = "";
+}
+$("#toggle-mode").addEventListener("click", () => setMode(mode === "signin" ? "signup" : "signin"));
+
 $("#signin").addEventListener("click", async () => {
   const email = $("#email").value.trim(), pw = $("#pw").value;
   if (recovery){ // set a new password after a reset link
     const { error } = await sb.auth.updateUser({ password: pw });
     if (error) return note($("#login-msg"), "err", error.message);
     recovery = false; note($("#login-msg"), "ok", "Password updated. Loading…"); return;
+  }
+  if (mode === "signup"){
+    if (!email || !pw) return note($("#login-msg"), "err", "Enter your email and a password.");
+    if (pw.length < 6) return note($("#login-msg"), "err", "Password must be at least 6 characters.");
+    $("#signin").disabled = true; note($("#login-msg"), "", "");
+    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { emailRedirectTo: location.origin + "/portal/", data: { name: $("#name").value.trim(), business: $("#biz").value.trim() } } });
+    $("#signin").disabled = false;
+    if (error) return note($("#login-msg"), "err", error.message);
+    if (data.session) note($("#login-msg"), "ok", "Account created. Loading…");
+    else note($("#login-msg"), "ok", "Account created — check your email to confirm, then sign in.");
+    return;
   }
   if (!email || !pw) return note($("#login-msg"), "err", "Enter your email and password.");
   $("#signin").disabled = true; note($("#login-msg"), "", "");
