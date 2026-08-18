@@ -100,6 +100,8 @@ html = replaceOne(html,
 
 /* 9b. Rewrite internal service links to the Thai tree (/services/… → /th/services/…) */
 html = html.split('href="/services/').join('href="/th/services/');
+/* 9c. The brand/home link → Thai home */
+html = html.split('href="/" aria-label').join('href="/th/" aria-label');
 
 /* 10. Write output */
 const outDir = path.join(ROOT, "th");
