@@ -250,6 +250,9 @@ sb.auth.onAuthStateChange((event, session) => {
 
 // ── app data ──────────────────────────────────────────
 async function loadApp(){
+  // Admins get sent to the admin screen; clients stay here.
+  const { data: isAdmin } = await sb.rpc("is_admin");
+  if (isAdmin){ location.replace("/portal/admin/"); return; }
   const { data: client } = await sb.from("clients").select("*").maybeSingle();
   $("#whoami").textContent = client ? (client.business || client.name) : "";
   openDashboard();
