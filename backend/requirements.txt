@@ -1,0 +1,6 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+asyncpg>=0.29
+pyjwt>=2.8
+passlib[bcrypt]>=1.7
+pydantic[email]>=2.6
