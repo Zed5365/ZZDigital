@@ -170,7 +170,9 @@ async def patch_project(pid: str, body: ProjectPatch, request: Request, user=Dep
     for i, (k, v) in enumerate([(k, v) for k, v in fields.items() if v is not None], start=1):
         sets.append(f"{k}=${i}"); vals.append(v)
     if user["is_admin"]:
-        sets.append("updated_at=now()")   # flags the project as updated for the client's ping
+        sets.append("updated_at=now()")          # client's ping
+    else:
+        sets.append("client_updated_at=now()")   # admin's ping
     if not sets: return {"ok": True}
     vals.append(pid)
     row = await pool(request).fetchrow(
@@ -192,6 +194,8 @@ async def add_image(pid: str, body: ImageIn, request: Request, user=Depends(curr
         raise HTTPException(400, "URL must start with http")
     row = await pool(request).fetchrow(
         "insert into project_images(project_id,url) values($1,$2) returning *", pid, body.url)
+    if not user["is_admin"]:
+        await pool(request).execute("update projects set client_updated_at=now() where id=$1", pid)
     return dict(row)
 
 @app.delete("/api/images/{iid}")
@@ -218,15 +222,17 @@ async def add_message(pid: str, body: MessageIn, request: Request, user=Depends(
     row = await pool(request).fetchrow(
         "insert into support_messages(user_id,project_id,sender,body) values($1,$2,$3,$4) returning *",
         proj["user_id"], pid, sender, body.body)
-    if sender == "studio":
-        await pool(request).execute("update projects set updated_at=now() where id=$1", pid)
+    col = "updated_at" if sender == "studio" else "client_updated_at"
+    await pool(request).execute(f"update projects set {col}=now() where id=$1", pid)
     return dict(row)
 
 # ── admin ────────────────────────────────────────────────
 @app.get("/api/clients")
 async def list_clients(request: Request, admin=Depends(require_admin)):
     rows = await pool(request).fetch(
-        "select id,name,business,email,created_at from users where is_admin=false order by created_at")
+        """select u.id, u.name, u.business, u.email, u.created_at,
+                  (select max(p.client_updated_at) from projects p where p.user_id = u.id) as client_activity
+           from users u where u.is_admin = false order by u.created_at""")
     return [dict(r) for r in rows]
 
 @app.get("/api/health")

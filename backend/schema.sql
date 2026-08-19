@@ -25,7 +25,8 @@ create table if not exists projects (
   web_url    text,
   next_step  text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()   -- bumped when the studio changes the project
+  updated_at timestamptz not null default now(),   -- bumped when the studio changes the project (client's ping)
+  client_updated_at timestamptz                    -- bumped when the client acts (admin's ping)
 );
 create index if not exists projects_user_idx on projects(user_id);
 

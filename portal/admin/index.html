@@ -32,7 +32,9 @@ label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margi
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
 .panel{padding:1.3rem;margin-bottom:1.1rem}.panel h2{font-size:1.05rem;margin-bottom:.8rem}
 .hidden{display:none!important}.muted{color:var(--text-muted);font-size:.88rem}
-.list{list-style:none}.list li{border:1px solid var(--line);border-radius:var(--r-sm);padding:.8rem 1rem;margin-bottom:.5rem;cursor:pointer;display:flex;justify-content:space-between;gap:1rem;align-items:center}
+.list{list-style:none}.list li{border:1px solid var(--line);border-radius:var(--r-sm);padding:.8rem 1rem;margin-bottom:.5rem;cursor:pointer;display:flex;justify-content:space-between;gap:1rem;align-items:center;position:relative}
+.ping{position:absolute;top:.7rem;right:.7rem;width:9px;height:9px;border-radius:50%;background:var(--red);animation:pingpulse 1.8s ease-out infinite}
+@keyframes pingpulse{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--red) 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
 .list li:hover{border-color:var(--line-strong)}.list li b{font-size:.98rem}
 .pill{font-size:.72rem;font-weight:650;padding:.2rem .6rem;border-radius:100px;background:var(--surface-2);color:var(--text-soft);white-space:nowrap}
 .back{background:none;border:0;color:var(--text-muted);cursor:pointer;font:inherit;font-size:.85rem;padding:.3rem 0;margin-block:1.1rem .3rem}
@@ -181,11 +183,15 @@ async function loadClients(){
   let data; try{ data=await api("/api/clients"); }catch(e){ $("#no-clients").textContent=e.message; return; }
   if(!data.length){ $("#client-list").innerHTML=""; $("#no-clients").textContent="No clients yet."; return; }
   $("#no-clients").textContent="";
-  $("#client-list").innerHTML=data.map(c=>`<li data-id="${c.id}"><span><b>${esc(c.business||c.name||c.email)}</b><br><span class="muted">${esc(c.email||c.name||"")}</span></span></li>`).join("");
+  $("#client-list").innerHTML=data.map(c=>{
+    const ping = c.client_activity && store.get("aseen_"+c.id) !== c.client_activity ? '<span class="ping" title="New activity"></span>' : "";
+    return `<li data-id="${c.id}">${ping}<span><b>${esc(c.business||c.name||c.email)}</b><br><span class="muted">${esc(c.email||c.name||"")}</span></span></li>`;
+  }).join("");
   $$("#client-list li").forEach(li=>li.addEventListener("click",()=>openClient(data.find(c=>c.id===li.dataset.id))));
 }
 async function openClient(c){
   selClient=c; sub("client"); window.scrollTo(0,0);
+  store.set("aseen_"+c.id, c.client_activity || "");   // clear this client's ping
   $("#c-name").textContent=c.business||c.name||c.email; $("#c-sub").textContent=c.email||"";
   let projects=[]; try{ projects=await api("/api/projects?user_id="+encodeURIComponent(c.id)); }catch{}
   if(!projects.length){ $("#proj-list").innerHTML=""; $("#no-proj").textContent="No projects yet."; }
