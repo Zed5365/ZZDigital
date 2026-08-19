@@ -158,9 +158,15 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
 
     <div class="card panel" style="margin-bottom:1.2rem">
       <h2>Images</h2>
-      <p class="muted">Paste image URLs (logo, photos, menu shots). They save to your project.</p>
+      <p class="muted">Paste an image URL, or upload straight from your device (logo, photos, menu shots).</p>
       <div class="thumbs" id="thumbs"></div>
-      <div class="urlrow"><input id="new-url" placeholder="https://…"><button class="btn btn--primary btn--sm" id="add-url">Add</button></div>
+      <div class="urlrow"><input id="new-url" placeholder="https://…"><button class="btn btn--primary btn--sm" id="add-url">Add URL</button></div>
+      <div class="urlrow" style="margin-top:.5rem;flex-wrap:wrap">
+        <button class="btn btn--ghost btn--sm" id="upload-files-btn">⬆ Upload images</button>
+        <button class="btn btn--ghost btn--sm" id="upload-folder-btn">⬆ Upload a folder</button>
+      </div>
+      <input type="file" id="file-input" accept="image/*" multiple hidden>
+      <input type="file" id="folder-input" webkitdirectory hidden>
       <div id="url-msg"></div>
     </div>
 
@@ -304,6 +310,25 @@ $("#add-url").addEventListener("click", async () => {
   catch (e){ note($("#url-msg"), "err", e.message); }
   finally { $("#add-url").disabled = false; }
 });
+$("#upload-files-btn").addEventListener("click", () => $("#file-input").click());
+$("#upload-folder-btn").addEventListener("click", () => $("#folder-input").click());
+$("#file-input").addEventListener("change", e => uploadFiles(e.target.files));
+$("#folder-input").addEventListener("change", e => uploadFiles(e.target.files));
+async function uploadFiles(fileList){
+  const files = [...fileList].filter(f => f.type && f.type.indexOf("image/") === 0);
+  if (!files.length) return note($("#url-msg"), "err", "No image files found in that selection.");
+  const fd = new FormData();
+  files.forEach(f => fd.append("files", f, f.name));
+  note($("#url-msg"), "", "Uploading " + files.length + " image" + (files.length > 1 ? "s" : "") + "…");
+  try {
+    const res = await fetch(API + "/api/projects/" + current.id + "/upload", { method: "POST", credentials: "include", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error((data && data.detail) || "Upload failed");
+    note($("#url-msg"), "ok", "Uploaded " + data.length + " image" + (data.length > 1 ? "s" : "") + ".");
+    renderImages();
+  } catch (e){ note($("#url-msg"), "err", e.message); }
+  $("#file-input").value = ""; $("#folder-input").value = "";
+}
 
 async function renderThread(){
   let msgs = []; try { msgs = await api("/api/projects/" + current.id + "/messages"); } catch {}

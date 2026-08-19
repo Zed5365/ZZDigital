@@ -17,12 +17,13 @@ Env vars:
                      from this same backend.
     COOKIE_SECURE  "1" in production (HTTPS), "0" for local http.
 """
-import os, datetime as dt
+import os, datetime as dt, uuid
 from contextlib import asynccontextmanager
 
-import asyncpg, jwt, bcrypt
-from fastapi import FastAPI, Request, Response, HTTPException, Depends
+import asyncpg, jwt, bcrypt, boto3
+from fastapi import FastAPI, Request, Response, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, EmailStr
 
 DATABASE_URL   = os.environ["DATABASE_URL"]
@@ -31,6 +32,10 @@ COOKIE_SECURE  = os.environ.get("COOKIE_SECURE", "0") == "1"
 ALLOWED_ORIGINS= [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
 COOKIE_NAME    = "zz_session"
 TOKEN_DAYS     = 30
+UPLOADS_BUCKET = os.environ.get("UPLOADS_BUCKET", "zzdigital-client-uploads")
+AWS_REGION     = os.environ.get("AWS_REGION", "ap-southeast-1")
+ALLOWED_IMG    = {"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/avif"}
+s3 = boto3.client("s3", region_name=AWS_REGION)   # AWS creds come from env (AWS_ACCESS_KEY_ID / SECRET)
 
 def hash_pw(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8")[:72], bcrypt.gensalt()).decode("utf-8")
@@ -206,6 +211,28 @@ async def del_image(iid: str, request: Request, user=Depends(current_user)):
     await _owned_project(request, user, str(img["project_id"]))
     await p.execute("delete from project_images where id=$1", iid)
     return {"ok": True}
+
+@app.post("/api/projects/{pid}/upload")
+async def upload_images(pid: str, request: Request, user=Depends(current_user), files: list[UploadFile] = File(...)):
+    await _owned_project(request, user, pid)
+    saved = []
+    for f in files:
+        data = await f.read()
+        if len(data) > 15 * 1024 * 1024:
+            raise HTTPException(413, (f.filename or "file") + " is too large (max 15 MB)")
+        ctype = (f.content_type or "").lower()
+        if ctype not in ALLOWED_IMG:
+            raise HTTPException(400, (f.filename or "file") + ": only image files are allowed")
+        base = "".join(c for c in (f.filename or "file") if c.isalnum() or c in "._-")[-80:] or "file"
+        key = f"{user['id']}/{pid}/{uuid.uuid4().hex}-{base}"
+        await run_in_threadpool(s3.put_object, Bucket=UPLOADS_BUCKET, Key=key, Body=data, ContentType=ctype)
+        url = f"https://{UPLOADS_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{key}"
+        row = await pool(request).fetchrow(
+            "insert into project_images(project_id,url) values($1,$2) returning *", pid, url)
+        saved.append(dict(row))
+    if not user["is_admin"]:
+        await pool(request).execute("update projects set client_updated_at=now() where id=$1", pid)
+    return saved
 
 # ── messages ─────────────────────────────────────────────
 @app.get("/api/projects/{pid}/messages")

@@ -4,3 +4,5 @@ asyncpg>=0.29
 pyjwt>=2.8
 bcrypt>=4.1
 pydantic[email]>=2.6
+boto3>=1.34
+python-multipart>=0.0.9
