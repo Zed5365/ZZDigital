@@ -1,0 +1,27 @@
+# ZZ Digital portal — run on the EC2 box from the repo root:
+#   docker compose up -d --build
+# Serves the portal at https://portal.zzdigitaldesign.com/portal/ with auto-HTTPS.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: backend/.env
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
