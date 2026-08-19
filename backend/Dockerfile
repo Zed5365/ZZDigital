@@ -6,7 +6,8 @@ WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app.py .
-COPY portal ./static          # served at /portal (client) and /portal/admin (admin)
+# portal + admin static files (served at /portal and /portal/admin)
+COPY portal ./static
 ENV STATIC_DIR=static
 EXPOSE 8000
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
