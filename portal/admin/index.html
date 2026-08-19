@@ -51,9 +51,9 @@ label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margi
 </head>
 <body>
 <div class="shell"><div class="topbar">
-  <a class="brand" href="/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
+  <a class="brand" href="https://zzdigitaldesign.com/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
   <nav class="nav">
-    <a href="/#services">Services</a><a href="/#work">Work</a><a href="/#process">Process</a><a href="/#pricing">Pricing</a><a href="/#faq">FAQ</a>
+    <a href="https://zzdigitaldesign.com/#services">Services</a><a href="https://zzdigitaldesign.com/#work">Work</a><a href="https://zzdigitaldesign.com/#process">Process</a><a href="https://zzdigitaldesign.com/#pricing">Pricing</a><a href="https://zzdigitaldesign.com/#faq">FAQ</a>
   </nav>
   <span class="tag">Admin</span>
   <button class="btn btn--ghost btn--sm hidden" id="signout">Sign out</button>
@@ -139,9 +139,16 @@ label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margi
   </div>
 </section>
 
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-const sb = createClient("https://vdgdbjesjoyfkfhqgdna.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkZ2RiamVzam95ZmtmaHFnZG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMTczMzAsImV4cCI6MjEwMjU5MzMzMH0.usS1Yo5QgB9cv18gYN-iqIyGwjkhJUposL57c4_aiz8");
+<script>
+(() => {
+"use strict";
+const API = "";  // same-origin; set to the backend URL if the admin page is served elsewhere
+async function api(path, opts = {}){
+  const res = await fetch(API + path, { credentials:"include", headers:{ "Content-Type":"application/json" }, ...opts });
+  let data = null; try { data = await res.json(); } catch {}
+  if (!res.ok) throw new Error((data && data.detail) || ("Error " + res.status));
+  return data;
+}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const note=(el,k,t)=>{el.innerHTML=`<div class="note ${k}">${esc(t)}</div>`;};
@@ -156,35 +163,32 @@ $("#signin").addEventListener("click", async ()=>{
   const email=$("#email").value.trim(), pw=$("#pw").value;
   if(!email||!pw) return note($("#login-msg"),"err","Enter email and password.");
   $("#signin").disabled=true; note($("#login-msg"),"","");
-  const { error }=await sb.auth.signInWithPassword({email,password:pw});
-  $("#signin").disabled=false;
-  if(error) note($("#login-msg"),"err",error.message);
+  try{ await api("/api/auth/signin",{method:"POST",body:JSON.stringify({email,password:pw})}); await gate(); }
+  catch(e){ note($("#login-msg"),"err",e.message); }
+  finally{ $("#signin").disabled=false; }
 });
-const signOut=async()=>{ await sb.auth.signOut(); };
+const signOut=async()=>{ try{ await api("/api/auth/signout",{method:"POST"}); }catch{} show("login"); };
 $("#signout").addEventListener("click",signOut); $("#signout2").addEventListener("click",signOut);
 
-sb.auth.onAuthStateChange((_e,session)=>{ session?gate():show("login"); });
-
 async function gate(){
-  const { data:isAdmin, error }=await sb.rpc("is_admin");
-  if(error||!isAdmin){ show("denied"); $("#signout").classList.add("hidden"); return; }
+  let user; try{ user=await api("/api/auth/me"); }catch{ show("login"); return; }
+  if(!user.is_admin){ show("denied"); $("#signout").classList.add("hidden"); return; }
   $("#signout").classList.remove("hidden"); show("app"); loadClients();
 }
 
 async function loadClients(){
   sub("clients");
-  const { data, error }=await sb.from("clients").select("*").order("created_at");
-  if(error){ $("#no-clients").textContent=error.message; return; }
+  let data; try{ data=await api("/api/clients"); }catch(e){ $("#no-clients").textContent=e.message; return; }
   if(!data.length){ $("#client-list").innerHTML=""; $("#no-clients").textContent="No clients yet."; return; }
   $("#no-clients").textContent="";
-  $("#client-list").innerHTML=data.map(c=>`<li data-id="${c.id}"><span><b>${esc(c.business||c.name)}</b><br><span class="muted">${esc(c.email||c.name)}</span></span></li>`).join("");
+  $("#client-list").innerHTML=data.map(c=>`<li data-id="${c.id}"><span><b>${esc(c.business||c.name||c.email)}</b><br><span class="muted">${esc(c.email||c.name||"")}</span></span></li>`).join("");
   $$("#client-list li").forEach(li=>li.addEventListener("click",()=>openClient(data.find(c=>c.id===li.dataset.id))));
 }
 async function openClient(c){
   selClient=c; sub("client"); window.scrollTo(0,0);
-  $("#c-name").textContent=c.business||c.name; $("#c-sub").textContent=c.email||"";
-  const { data:projects }=await sb.from("projects").select("*").eq("client_id",c.id).order("created_at");
-  if(!projects||!projects.length){ $("#proj-list").innerHTML=""; $("#no-proj").textContent="No projects yet."; }
+  $("#c-name").textContent=c.business||c.name||c.email; $("#c-sub").textContent=c.email||"";
+  let projects=[]; try{ projects=await api("/api/projects?user_id="+encodeURIComponent(c.id)); }catch{}
+  if(!projects.length){ $("#proj-list").innerHTML=""; $("#no-proj").textContent="No projects yet."; }
   else{ $("#no-proj").textContent="";
     $("#proj-list").innerHTML=projects.map(p=>`<li data-id="${p.id}"><b>${esc(p.title)}</b><span class="pill">${esc(p.status||"")}</span></li>`).join("");
     $$("#proj-list li").forEach(li=>li.addEventListener("click",()=>openProject(projects.find(p=>p.id===li.dataset.id))));
@@ -194,41 +198,44 @@ $("#back-clients").addEventListener("click",loadClients);
 $("#create-proj").addEventListener("click", async ()=>{
   const title=$("#np-title").value.trim(); if(!title) return note($("#np-msg"),"err","Title is required.");
   $("#create-proj").disabled=true;
-  const { error }=await sb.from("projects").insert({client_id:selClient.id,title,kind:$("#np-kind").value.trim()||null,status:$("#np-status").value,web_url:$("#np-url").value.trim()||null,next_step:$("#np-next").value.trim()||null});
-  $("#create-proj").disabled=false;
-  if(error) return note($("#np-msg"),"err",error.message);
-  ["#np-title","#np-kind","#np-url","#np-next"].forEach(s=>$(s).value=""); note($("#np-msg"),"ok","Project created."); openClient(selClient);
+  try{
+    await api("/api/projects",{method:"POST",body:JSON.stringify({user_id:selClient.id,title,kind:$("#np-kind").value.trim()||null,status:$("#np-status").value,web_url:$("#np-url").value.trim()||null,next_step:$("#np-next").value.trim()||null})});
+    ["#np-title","#np-kind","#np-url","#np-next"].forEach(s=>$(s).value=""); note($("#np-msg"),"ok","Project created."); openClient(selClient);
+  }catch(e){ note($("#np-msg"),"err",e.message); }
+  finally{ $("#create-proj").disabled=false; }
 });
 
 async function openProject(p){
   selProject=p; sub("project"); window.scrollTo(0,0);
-  $("#p-title").textContent=p.title; $("#p-client").textContent=(selClient.business||selClient.name);
+  $("#p-title").textContent=p.title; $("#p-client").textContent=(selClient.business||selClient.name||selClient.email);
   $("#p-status").value=p.status||"In build"; $("#p-url").value=p.web_url||""; $("#p-next").value=p.next_step||"";
   $("#p-brief").textContent=p.brief||"—"; $("#p-notes").textContent=p.notes||"—"; $("#p-msg").innerHTML="";
-  const { data:imgs }=await sb.from("project_images").select("*").eq("project_id",p.id).order("created_at");
-  $("#p-thumbs").innerHTML=(imgs||[]).map(im=>`<div class="thumb"><img src="${esc(im.url)}" onerror="this.style.opacity=.2"></div>`).join("");
-  $("#no-img").textContent=(imgs&&imgs.length)?"":"No images yet.";
+  let imgs=[]; try{ imgs=await api("/api/projects/"+p.id+"/images"); }catch{}
+  $("#p-thumbs").innerHTML=imgs.map(im=>`<div class="thumb"><img src="${esc(im.url)}" onerror="this.style.opacity=.2"></div>`).join("");
+  $("#no-img").textContent=imgs.length?"":"No images yet.";
   loadThread();
 }
 $("#back-client").addEventListener("click",()=>openClient(selClient));
 $("#save-proj").addEventListener("click", async ()=>{
   $("#save-proj").disabled=true;
-  const { error }=await sb.from("projects").update({status:$("#p-status").value,web_url:$("#p-url").value.trim()||null,next_step:$("#p-next").value.trim()||null}).eq("id",selProject.id);
-  $("#save-proj").disabled=false;
-  note($("#p-msg"),error?"err":"ok",error?error.message:"Saved."); selProject.status=$("#p-status").value;
+  try{
+    await api("/api/projects/"+selProject.id,{method:"PATCH",body:JSON.stringify({status:$("#p-status").value,web_url:$("#p-url").value.trim()||null,next_step:$("#p-next").value.trim()||null})});
+    selProject.status=$("#p-status").value; note($("#p-msg"),"ok","Saved.");
+  }catch(e){ note($("#p-msg"),"err",e.message); }
+  finally{ $("#save-proj").disabled=false; }
 });
 async function loadThread(){
-  const { data:msgs }=await sb.from("support_messages").select("*").eq("project_id",selProject.id).order("created_at");
-  $("#thread").innerHTML=(msgs&&msgs.length)?msgs.map(m=>`<div class="msg ${m.sender}"><div class="who">${m.sender==="studio"?"ZZ Digital":esc(selClient.name)}</div>${esc(m.body)}</div>`).join(""):`<p class="muted">No messages yet.</p>`;
+  let msgs=[]; try{ msgs=await api("/api/projects/"+selProject.id+"/messages"); }catch{}
+  $("#thread").innerHTML=msgs.length?msgs.map(m=>`<div class="msg ${m.sender}"><div class="who">${m.sender==="studio"?"ZZ Digital":esc(selClient.name||selClient.email)}</div>${esc(m.body)}</div>`).join(""):`<p class="muted">No messages yet.</p>`;
 }
 $("#send").addEventListener("click", async ()=>{
   const body=$("#reply").value.trim(); if(!body) return;
-  const { error }=await sb.from("support_messages").insert({client_id:selClient.id,project_id:selProject.id,sender:"studio",body});
-  if(error) return alert(error.message);
-  $("#reply").value=""; loadThread();
+  try{ await api("/api/projects/"+selProject.id+"/messages",{method:"POST",body:JSON.stringify({body})}); $("#reply").value=""; loadThread(); }
+  catch(e){ alert(e.message); }
 });
 
-(async()=>{ const { data:{session} }=await sb.auth.getSession(); session?gate():show("login"); })();
+gate();
+})();
 </script>
 </body>
 </html>

@@ -223,3 +223,16 @@ async def list_clients(request: Request, admin=Depends(require_admin)):
 async def health(request: Request):
     await pool(request).fetchval("select 1")
     return {"ok": True}
+
+# ── serve the portal + admin static files ────────────────
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
+_STATIC = os.environ.get("STATIC_DIR", "static")   # Docker copies the portal/ folder here
+
+@app.get("/")
+def _root():
+    return RedirectResponse("/portal/")
+
+if os.path.isdir(_STATIC):
+    # /portal/ -> static/index.html, /portal/admin/ -> static/admin/index.html
+    app.mount("/portal", StaticFiles(directory=_STATIC, html=True), name="portal")
