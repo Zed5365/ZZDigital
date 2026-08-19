@@ -90,9 +90,9 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
 <!-- LOGIN -->
 <section id="view-login">
   <div class="shell"><div class="topbar">
-    <a class="brand" href="/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
+    <a class="brand" href="https://zzdigitaldesign.com/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
     <nav class="nav">
-      <a href="/#services">Services</a><a href="/#work">Work</a><a href="/#process">Process</a><a href="/#pricing">Pricing</a><a href="/#faq">FAQ</a>
+      <a href="https://zzdigitaldesign.com/#services">Services</a><a href="https://zzdigitaldesign.com/#work">Work</a><a href="https://zzdigitaldesign.com/#process">Process</a><a href="https://zzdigitaldesign.com/#pricing">Pricing</a><a href="https://zzdigitaldesign.com/#faq">FAQ</a>
     </nav>
     <button class="icon-btn" id="theme" type="button" aria-label="Theme">
       <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
@@ -116,9 +116,9 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
 <!-- APP -->
 <section id="view-app" class="hidden">
   <div class="shell"><div class="topbar">
-    <a class="brand" href="/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
+    <a class="brand" href="https://zzdigitaldesign.com/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
     <nav class="nav">
-      <a href="/#services">Services</a><a href="/#work">Work</a><a href="/#process">Process</a><a href="/#pricing">Pricing</a><a href="/#faq">FAQ</a>
+      <a href="https://zzdigitaldesign.com/#services">Services</a><a href="https://zzdigitaldesign.com/#work">Work</a><a href="https://zzdigitaldesign.com/#process">Process</a><a href="https://zzdigitaldesign.com/#pricing">Pricing</a><a href="https://zzdigitaldesign.com/#faq">FAQ</a>
     </nav>
     <span class="muted" id="whoami"></span>
     <button class="icon-btn" id="theme2" type="button" aria-label="Theme">
@@ -171,12 +171,18 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
 
 <footer>ZZ Digital · Client portal</footer>
 
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const SUPABASE_URL  = "https://vdgdbjesjoyfkfhqgdna.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkZ2RiamVzam95ZmtmaHFnZG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMTczMzAsImV4cCI6MjEwMjU5MzMzMH0.usS1Yo5QgB9cv18gYN-iqIyGwjkhJUposL57c4_aiz8";
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+<script>
+(() => {
+"use strict";
+// If the portal is served from the SAME origin as the API, leave API = "".
+// If not (portal on S3, API on another host), set API to the backend URL.
+const API = "";
+async function api(path, opts = {}){
+  const res = await fetch(API + path, { credentials: "include", headers: { "Content-Type": "application/json" }, ...opts });
+  let data = null; try { data = await res.json(); } catch {}
+  if (!res.ok) throw new Error((data && data.detail) || ("Error " + res.status));
+  return data;
+}
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -188,7 +194,7 @@ $("#theme").addEventListener("click", toggleTheme); $("#theme2").addEventListene
 
 const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const note = (el, kind, text) => { el.innerHTML = `<div class="msg-note ${kind}">${esc(text)}</div>`; };
-let recovery = false, current = null;
+let current = null;
 
 function show(view){
   $("#view-login").classList.toggle("hidden", view !== "login");
@@ -215,72 +221,42 @@ $("#toggle-mode").addEventListener("click", () => setMode(mode === "signin" ? "s
 
 $("#signin").addEventListener("click", async () => {
   const email = $("#email").value.trim(), pw = $("#pw").value;
-  if (recovery){ // set a new password after a reset link
-    const { error } = await sb.auth.updateUser({ password: pw });
-    if (error) return note($("#login-msg"), "err", error.message);
-    recovery = false; note($("#login-msg"), "ok", "Password updated. Loading…"); return;
-  }
-  if (mode === "signup"){
-    if (!email || !pw) return note($("#login-msg"), "err", "Enter your email and a password.");
-    if (pw.length < 6) return note($("#login-msg"), "err", "Password must be at least 6 characters.");
-    $("#signin").disabled = true; note($("#login-msg"), "", "");
-    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { emailRedirectTo: location.origin + "/portal/", data: { name: $("#name").value.trim(), business: $("#biz").value.trim() } } });
-    $("#signin").disabled = false;
-    if (error) return note($("#login-msg"), "err", error.message);
-    if (data.session) note($("#login-msg"), "ok", "Account created. Loading…");
-    else note($("#login-msg"), "ok", "Account created — check your email to confirm, then sign in.");
-    return;
-  }
   if (!email || !pw) return note($("#login-msg"), "err", "Enter your email and password.");
+  if (mode === "signup" && pw.length < 6) return note($("#login-msg"), "err", "Password must be at least 6 characters.");
   $("#signin").disabled = true; note($("#login-msg"), "", "");
-  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
-  $("#signin").disabled = false;
-  if (error) note($("#login-msg"), "err", error.message);
+  try {
+    if (mode === "signup")
+      await api("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password: pw, name: $("#name").value.trim(), business: $("#biz").value.trim() }) });
+    else
+      await api("/api/auth/signin", { method: "POST", body: JSON.stringify({ email, password: pw }) });
+    await route();
+  } catch (e) { note($("#login-msg"), "err", e.message); }
+  finally { $("#signin").disabled = false; }
 });
-$("#forgot").addEventListener("click", async () => {
-  const email = $("#email").value.trim();
-  if (!email) return note($("#login-msg"), "err", "Enter your email first, then tap reset.");
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/portal/" });
-  note($("#login-msg"), error ? "err" : "ok", error ? error.message : "Check your email for a reset link.");
-});
-$("#signout").addEventListener("click", async () => { await sb.auth.signOut(); });
+$("#forgot").addEventListener("click", () => note($("#login-msg"), "ok", "Email info@zzdigital.awsapps.com and we'll reset your password."));
+$("#signout").addEventListener("click", async () => { try { await api("/api/auth/signout", { method: "POST" }); } catch {} show("login"); });
 
-sb.auth.onAuthStateChange((event, session) => {
-  if (event === "PASSWORD_RECOVERY"){
-    recovery = true; show("login");
-    $("#login-title").textContent = "Set a new password";
-    $("#login-sub").textContent = "Enter a new password for your account.";
-    $("#email").closest(".field").classList.add("hidden");
-    $("#signin").textContent = "Update password";
-    return;
-  }
-  if (session) loadApp(); else show("login");
-});
-
-// ── app data ──────────────────────────────────────────
-async function loadApp(){
-  // Admins get sent to the admin screen; clients stay here.
-  const { data: isAdmin } = await sb.rpc("is_admin");
-  if (isAdmin){ location.replace("/portal/admin/"); return; }
-  const { data: client } = await sb.from("clients").select("*").maybeSingle();
-  $("#whoami").textContent = client ? (client.business || client.name) : "";
+// ── routing + data ────────────────────────────────────
+async function route(){
+  let user;
+  try { user = await api("/api/auth/me"); } catch { show("login"); return; }
+  if (user.is_admin){ location.replace("/portal/admin/"); return; }
+  $("#whoami").textContent = user.business || user.name || user.email;
   openDashboard();
 }
 async function openDashboard(){
   show("dashboard");
-  const { data: projects, error } = await sb.from("projects").select("*").order("created_at");
+  let projects;
+  try { projects = await api("/api/projects"); } catch (e){ $("#proj-list").innerHTML = ""; $("#no-proj").textContent = e.message; return; }
   const list = $("#proj-list");
-  if (error){ list.innerHTML = ""; $("#no-proj").textContent = error.message; return; }
-  if (!projects || !projects.length){ list.innerHTML = ""; $("#no-proj").textContent = "No projects yet — ZZ Digital will add them here."; return; }
+  if (!projects.length){ list.innerHTML = ""; $("#no-proj").textContent = "No projects yet — ZZ Digital will add them here."; return; }
   $("#no-proj").textContent = "";
-  list.innerHTML = projects.map(p => `<div class="card proj" data-id="${p.id}">
-    <div class="kind">${esc(p.kind||"Project")}</div><h3>${esc(p.title)}</h3>
-    <span class="pill">${esc(p.status||"")}</span></div>`).join("");
+  list.innerHTML = projects.map(p => `<div class="card proj" data-id="${p.id}"><div class="kind">${esc(p.kind||"Project")}</div><h3>${esc(p.title)}</h3><span class="pill">${esc(p.status||"")}</span></div>`).join("");
   $$("#proj-list .proj").forEach(el => el.addEventListener("click", () => openProject(el.dataset.id, projects)));
   window.scrollTo(0,0);
 }
 async function openProject(id, projects){
-  current = (projects || []).find(p => p.id === id) || (await sb.from("projects").select("*").eq("id",id).single()).data;
+  current = projects.find(p => p.id === id);
   const p = current;
   $("#d-title").textContent = p.title; $("#d-kind").textContent = p.kind || "";
   $("#d-brief").value = p.brief || ""; $("#d-notes").value = p.notes || "";
@@ -293,44 +269,42 @@ $("#back").addEventListener("click", openDashboard);
 
 $("#save-details").addEventListener("click", async () => {
   $("#save-details").disabled = true;
-  const { error } = await sb.from("projects").update({ brief: $("#d-brief").value, notes: $("#d-notes").value }).eq("id", current.id);
-  $("#save-details").disabled = false;
-  note($("#save-msg"), error ? "err" : "ok", error ? error.message : "Saved.");
+  try {
+    await api("/api/projects/" + current.id, { method: "PATCH", body: JSON.stringify({ brief: $("#d-brief").value, notes: $("#d-notes").value }) });
+    current.brief = $("#d-brief").value; current.notes = $("#d-notes").value;
+    note($("#save-msg"), "ok", "Saved.");
+  } catch (e){ note($("#save-msg"), "err", e.message); }
+  finally { $("#save-details").disabled = false; }
 });
 
 async function renderImages(){
-  const { data: imgs } = await sb.from("project_images").select("*").eq("project_id", current.id).order("created_at");
-  $("#thumbs").innerHTML = (imgs||[]).map(im => `<div class="thumb"><img src="${esc(im.url)}" alt="" onerror="this.style.opacity=.2"><button data-del="${im.id}" title="Remove">✕</button></div>`).join("");
-  $$("#thumbs [data-del]").forEach(b => b.addEventListener("click", async () => {
-    await sb.from("project_images").delete().eq("id", b.dataset.del); renderImages();
-  }));
+  let imgs = []; try { imgs = await api("/api/projects/" + current.id + "/images"); } catch {}
+  $("#thumbs").innerHTML = imgs.map(im => `<div class="thumb"><img src="${esc(im.url)}" alt="" onerror="this.style.opacity=.2"><button data-del="${im.id}" title="Remove">✕</button></div>`).join("");
+  $$("#thumbs [data-del]").forEach(b => b.addEventListener("click", async () => { try { await api("/api/images/" + b.dataset.del, { method: "DELETE" }); } catch {} renderImages(); }));
 }
 $("#add-url").addEventListener("click", async () => {
   const url = $("#new-url").value.trim();
   if (!/^https?:\/\//i.test(url)) return note($("#url-msg"), "err", "Enter a full image URL starting with http.");
   $("#add-url").disabled = true;
-  const { error } = await sb.from("project_images").insert({ project_id: current.id, url });
-  $("#add-url").disabled = false;
-  if (error) return note($("#url-msg"), "err", error.message);
-  $("#new-url").value = ""; $("#url-msg").innerHTML = ""; renderImages();
+  try { await api("/api/projects/" + current.id + "/images", { method: "POST", body: JSON.stringify({ url }) }); $("#new-url").value = ""; $("#url-msg").innerHTML = ""; renderImages(); }
+  catch (e){ note($("#url-msg"), "err", e.message); }
+  finally { $("#add-url").disabled = false; }
 });
 
 async function renderThread(){
-  const { data: msgs } = await sb.from("support_messages").select("*").eq("project_id", current.id).order("created_at");
-  $("#thread").innerHTML = (msgs||[]).length
-    ? msgs.map(m => `<div class="msg ${m.sender}"><div class="who">${m.sender==="studio"?"ZZ Digital":"You"}</div>${esc(m.body)}</div>`).join("")
+  let msgs = []; try { msgs = await api("/api/projects/" + current.id + "/messages"); } catch {}
+  $("#thread").innerHTML = msgs.length
+    ? msgs.map(m => `<div class="msg ${m.sender}"><div class="who">${m.sender === "studio" ? "ZZ Digital" : "You"}</div>${esc(m.body)}</div>`).join("")
     : `<p class="muted">No messages yet.</p>`;
 }
 $("#send-msg").addEventListener("click", async () => {
   const body = $("#reply").value.trim(); if (!body) return;
-  const { data: client } = await sb.from("clients").select("id").maybeSingle();
-  const { error } = await sb.from("support_messages").insert({ client_id: client.id, project_id: current.id, sender: "client", body });
-  if (error) return alert(error.message);
-  $("#reply").value = ""; renderThread();
+  try { await api("/api/projects/" + current.id + "/messages", { method: "POST", body: JSON.stringify({ body }) }); $("#reply").value = ""; renderThread(); }
+  catch (e){ alert(e.message); }
 });
 
-// initial state
-(async () => { const { data:{ session } } = await sb.auth.getSession(); if (session) loadApp(); else show("login"); })();
+route();
+})();
 </script>
 </body>
 </html>

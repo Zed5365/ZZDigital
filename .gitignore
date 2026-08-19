@@ -9,6 +9,11 @@ desktop.ini
 *.swp
 *~
 
+# Secrets
+.env
+.env.*
+!.env.example
+
 # Logs & temp
 *.log
 *.tmp
