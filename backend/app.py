@@ -20,8 +20,7 @@ Env vars:
 import os, datetime as dt
 from contextlib import asynccontextmanager
 
-import asyncpg, jwt
-from passlib.context import CryptContext
+import asyncpg, jwt, bcrypt
 from fastapi import FastAPI, Request, Response, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
@@ -33,7 +32,14 @@ ALLOWED_ORIGINS= [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split
 COOKIE_NAME    = "zz_session"
 TOKEN_DAYS     = 30
 
-pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def hash_pw(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8")[:72], bcrypt.gensalt()).decode("utf-8")
+
+def verify_pw(password: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(password.encode("utf-8")[:72], hashed.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -104,14 +110,14 @@ async def signup(body: SignUp, request: Request, resp: Response):
         raise HTTPException(409, "That email already has an account")
     row = await p.fetchrow(
         "insert into users(email,password_hash,name,business) values($1,$2,$3,$4) returning *",
-        body.email.lower(), pwd.hash(body.password), body.name, body.business)
+        body.email.lower(), hash_pw(body.password), body.name, body.business)
     set_cookie(resp, make_token(str(row["id"])))
     return public_user(row)
 
 @app.post("/api/auth/signin")
 async def signin(body: SignIn, request: Request, resp: Response):
     row = await pool(request).fetchrow("select * from users where email=$1", body.email.lower())
-    if not row or not pwd.verify(body.password, row["password_hash"]):
+    if not row or not verify_pw(body.password, row["password_hash"]):
         raise HTTPException(401, "Wrong email or password")
     set_cookie(resp, make_token(str(row["id"])))
     return public_user(row)
