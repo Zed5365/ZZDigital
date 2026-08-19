@@ -267,7 +267,9 @@ async function openProject(id, projects){
   store.set("seen_" + p.id, p.updated_at);   // clear the ping for this project
   $("#d-title").textContent = p.title; $("#d-kind").textContent = p.kind || "";
   $("#d-brief").value = p.brief || ""; $("#d-notes").value = p.notes || "";
-  $("#d-status").textContent = p.status || "—"; $("#d-url").textContent = p.web_url || "—"; $("#d-next").textContent = p.next_step || "—";
+  $("#d-status").textContent = p.status || "—";
+  $("#d-url").innerHTML = p.web_url ? `<a href="${esc(/^https?:\/\//i.test(p.web_url) ? p.web_url : "https://" + p.web_url)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(p.web_url)}</a>` : "—";
+  $("#d-next").textContent = p.next_step || "—";
   $("#save-msg").innerHTML = ""; $("#url-msg").innerHTML = "";
   // ping the Status & info panel if the studio changed it since last view
   const infoCur = JSON.stringify([p.status, p.web_url, p.next_step]);
