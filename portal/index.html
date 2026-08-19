@@ -62,7 +62,9 @@ label{display:block;font-size:.82rem;font-weight:560;color:var(--text-soft);marg
 .app-head h1{font-size:1.5rem;letter-spacing:-.02em}
 .app-head p{color:var(--text-muted);font-size:.92rem}
 .grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))}
-.proj{padding:1.3rem;cursor:pointer;transition:border-color .2s,transform .2s}
+.proj{padding:1.3rem;cursor:pointer;transition:border-color .2s,transform .2s;position:relative}
+.ping{position:absolute;top:.85rem;right:.85rem;width:10px;height:10px;border-radius:50%;background:var(--red);animation:pingpulse 1.8s ease-out infinite}
+@keyframes pingpulse{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--red) 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
 .proj:hover{border-color:var(--line-strong);transform:translateY(-2px)}
 .proj h3{font-size:1.05rem;margin-bottom:.2rem}
 .proj .kind{font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
@@ -251,13 +253,17 @@ async function openDashboard(){
   const list = $("#proj-list");
   if (!projects.length){ list.innerHTML = ""; $("#no-proj").textContent = "No projects yet — ZZ Digital will add them here."; return; }
   $("#no-proj").textContent = "";
-  list.innerHTML = projects.map(p => `<div class="card proj" data-id="${p.id}"><div class="kind">${esc(p.kind||"Project")}</div><h3>${esc(p.title)}</h3><span class="pill">${esc(p.status||"")}</span></div>`).join("");
+  list.innerHTML = projects.map(p => {
+    const ping = store.get("seen_" + p.id) !== p.updated_at ? '<span class="ping" title="New update"></span>' : "";
+    return `<div class="card proj" data-id="${p.id}">${ping}<div class="kind">${esc(p.kind||"Project")}</div><h3>${esc(p.title)}</h3><span class="pill">${esc(p.status||"")}</span></div>`;
+  }).join("");
   $$("#proj-list .proj").forEach(el => el.addEventListener("click", () => openProject(el.dataset.id, projects)));
   window.scrollTo(0,0);
 }
 async function openProject(id, projects){
   current = projects.find(p => p.id === id);
   const p = current;
+  store.set("seen_" + p.id, p.updated_at);   // clear the ping for this project
   $("#d-title").textContent = p.title; $("#d-kind").textContent = p.kind || "";
   $("#d-brief").value = p.brief || ""; $("#d-notes").value = p.notes || "";
   $("#d-status").textContent = p.status || "—"; $("#d-url").textContent = p.web_url || "—"; $("#d-next").textContent = p.next_step || "—";

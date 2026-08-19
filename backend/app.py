@@ -169,6 +169,8 @@ async def patch_project(pid: str, body: ProjectPatch, request: Request, user=Dep
     sets, vals = [], []
     for i, (k, v) in enumerate([(k, v) for k, v in fields.items() if v is not None], start=1):
         sets.append(f"{k}=${i}"); vals.append(v)
+    if user["is_admin"]:
+        sets.append("updated_at=now()")   # flags the project as updated for the client's ping
     if not sets: return {"ok": True}
     vals.append(pid)
     row = await pool(request).fetchrow(
@@ -216,6 +218,8 @@ async def add_message(pid: str, body: MessageIn, request: Request, user=Depends(
     row = await pool(request).fetchrow(
         "insert into support_messages(user_id,project_id,sender,body) values($1,$2,$3,$4) returning *",
         proj["user_id"], pid, sender, body.body)
+    if sender == "studio":
+        await pool(request).execute("update projects set updated_at=now() where id=$1", pid)
     return dict(row)
 
 # ── admin ────────────────────────────────────────────────
