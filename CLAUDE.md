@@ -14,6 +14,23 @@ Two parts live in this one repo:
 
 Public site: **https://zzdigitaldesign.com** · Repo: **github.com/Zed5365/ZZDigital** (branch `main`).
 
+## Before you build — ASK FIRST
+
+These two features are big architectural forks and **not every project, page, or feature needs
+them.** When starting a new project, a new page, or a major feature, **ask the user before
+assuming** — do not scaffold either one silently:
+
+1. **Bilingual (EN + TH)?**
+   - **Yes →** follow the `build/build-th.js` pattern: English is the source (with `data-i18n`
+     attributes + a `TH` dictionary), Thai is generated to `/th/…`, with reciprocal `hreflang`.
+   - **No →** build single-locale English only; skip the Thai build and hreflang.
+2. **Client portal / login (accounts, auth)?**
+   - **Yes →** wire up the Supabase auth + `portal/` + `portal/admin/` pattern (accounts, projects,
+     row-level security). Confirm the account model too (admin-created vs. public sign-up).
+   - **No →** keep it a static marketing site with no auth or database.
+
+Confirm which of these apply **before** creating files, so the structure is right from the start.
+
 ## Tech / architecture
 
 - **No framework.** Hand-written HTML. The homepage (`index.html`) inlines its CSS + JS.
