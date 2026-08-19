@@ -65,6 +65,7 @@ label{display:block;font-size:.82rem;font-weight:560;color:var(--text-soft);marg
 .proj{padding:1.3rem;cursor:pointer;transition:border-color .2s,transform .2s;position:relative}
 .ping{position:absolute;top:.85rem;right:.85rem;width:10px;height:10px;border-radius:50%;background:var(--red);animation:pingpulse 1.8s ease-out infinite}
 @keyframes pingpulse{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--red) 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.pdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:.4rem;vertical-align:middle;animation:pingpulse 1.8s ease-out infinite}
 .proj:hover{border-color:var(--line-strong);transform:translateY(-2px)}
 .proj h3{font-size:1.05rem;margin-bottom:.2rem}
 .proj .kind{font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
@@ -148,7 +149,7 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
         <div id="save-msg"></div>
       </div>
       <div class="card panel">
-        <h2>Status &amp; info</h2>
+        <h2>Status &amp; info <span class="pdot hidden" id="ping-info"></span></h2>
         <p class="muted">Current stage</p><p id="d-status" style="font-weight:600;margin-bottom:1rem"></p>
         <p class="muted">Your web address</p><p id="d-url" style="margin-bottom:1rem"></p>
         <p class="muted">Next step</p><p id="d-next"></p>
@@ -164,7 +165,7 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
     </div>
 
     <div class="card panel">
-      <h2>Messages with ZZ Digital</h2>
+      <h2>Messages with ZZ Digital <span class="pdot hidden" id="ping-msg"></span></h2>
       <div id="thread"></div>
       <div class="urlrow"><input id="reply" placeholder="Type a message…"><button class="btn btn--primary btn--sm" id="send-msg">Send</button></div>
     </div>
@@ -268,6 +269,11 @@ async function openProject(id, projects){
   $("#d-brief").value = p.brief || ""; $("#d-notes").value = p.notes || "";
   $("#d-status").textContent = p.status || "—"; $("#d-url").textContent = p.web_url || "—"; $("#d-next").textContent = p.next_step || "—";
   $("#save-msg").innerHTML = ""; $("#url-msg").innerHTML = "";
+  // ping the Status & info panel if the studio changed it since last view
+  const infoCur = JSON.stringify([p.status, p.web_url, p.next_step]);
+  const infoPrev = store.get("cinfo_" + p.id);
+  $("#ping-info").classList.toggle("hidden", !(infoPrev !== null && infoPrev !== infoCur));
+  store.set("cinfo_" + p.id, infoCur);
   show("detail"); window.scrollTo(0,0);
   await renderImages(); await renderThread();
 }
@@ -299,6 +305,11 @@ $("#add-url").addEventListener("click", async () => {
 
 async function renderThread(){
   let msgs = []; try { msgs = await api("/api/projects/" + current.id + "/messages"); } catch {}
+  // ping the Messages panel if a new studio message arrived since last view
+  const latestStudio = [...msgs].reverse().find(m => m.sender === "studio");
+  const mPrev = store.get("cmsg_" + current.id);
+  $("#ping-msg").classList.toggle("hidden", !(latestStudio && mPrev !== null && mPrev !== latestStudio.created_at));
+  store.set("cmsg_" + current.id, latestStudio ? latestStudio.created_at : "");
   $("#thread").innerHTML = msgs.length
     ? msgs.map(m => `<div class="msg ${m.sender}"><div class="who">${m.sender === "studio" ? "ZZ Digital" : "You"}</div>${esc(m.body)}</div>`).join("")
     : `<p class="muted">No messages yet.</p>`;

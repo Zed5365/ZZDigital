@@ -129,13 +129,13 @@ label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margi
       <div id="p-msg"></div>
     </div>
     <div class="card panel">
-      <h2>Client's brief &amp; notes</h2>
+      <h2>Client's brief &amp; notes <span class="pdot hidden" id="a-ping-brief"></span></h2>
       <p class="muted" style="margin-bottom:.3rem">What the project is</p><p id="p-brief">—</p>
       <p class="muted" style="margin:.8rem 0 .3rem">Notes</p><p id="p-notes">—</p>
     </div>
-    <div class="card panel"><h2>Images</h2><div class="thumbs" id="p-thumbs"></div><p class="muted" id="no-img"></p></div>
+    <div class="card panel"><h2>Images <span class="pdot hidden" id="a-ping-img"></span></h2><div class="thumbs" id="p-thumbs"></div><p class="muted" id="no-img"></p></div>
     <div class="card panel">
-      <h2>Messages</h2>
+      <h2>Messages <span class="pdot hidden" id="a-ping-msg"></span></h2>
       <div id="thread"></div>
       <div class="inline" style="margin-top:.7rem"><input id="reply" placeholder="Reply as ZZ Digital…"><button class="btn btn--primary btn--sm" id="send">Send</button></div>
     </div>
@@ -221,9 +221,15 @@ async function openProject(p){
   $("#p-title").textContent=p.title; $("#p-client").textContent=(selClient.business||selClient.name||selClient.email);
   $("#p-status").value=p.status||"In build"; $("#p-url").value=p.web_url||""; $("#p-next").value=p.next_step||"";
   $("#p-brief").textContent=p.brief||"—"; $("#p-notes").textContent=p.notes||"—"; $("#p-msg").innerHTML="";
+  const biCur=JSON.stringify([p.brief,p.notes]); const biPrev=store.get("abi_"+p.id);
+  $("#a-ping-brief").classList.toggle("hidden", !(biPrev!==null && biPrev!==biCur));
+  store.set("abi_"+p.id, biCur);
   let imgs=[]; try{ imgs=await api("/api/projects/"+p.id+"/images"); }catch{}
   $("#p-thumbs").innerHTML=imgs.map(im=>`<div class="thumb"><img src="${esc(im.url)}" onerror="this.style.opacity=.2"></div>`).join("");
   $("#no-img").textContent=imgs.length?"":"No images yet.";
+  const imgCur=imgs.length+"|"+(imgs.length?imgs[imgs.length-1].created_at:""); const imgPrev=store.get("aimg_"+p.id);
+  $("#a-ping-img").classList.toggle("hidden", !(imgPrev!==null && imgPrev!==imgCur));
+  store.set("aimg_"+p.id, imgCur);
   loadThread();
 }
 $("#back-client").addEventListener("click",()=>openClient(selClient));
@@ -237,6 +243,9 @@ $("#save-proj").addEventListener("click", async ()=>{
 });
 async function loadThread(){
   let msgs=[]; try{ msgs=await api("/api/projects/"+selProject.id+"/messages"); }catch{}
+  const latestClient=[...msgs].reverse().find(m=>m.sender==="client"); const mPrev=store.get("amsg_"+selProject.id);
+  $("#a-ping-msg").classList.toggle("hidden", !(latestClient && mPrev!==null && mPrev!==latestClient.created_at));
+  store.set("amsg_"+selProject.id, latestClient?latestClient.created_at:"");
   $("#thread").innerHTML=msgs.length?msgs.map(m=>`<div class="msg ${m.sender}"><div class="who">${m.sender==="studio"?"ZZ Digital":esc(selClient.name||selClient.email)}</div>${esc(m.body)}</div>`).join(""):`<p class="muted">No messages yet.</p>`;
 }
 $("#send").addEventListener("click", async ()=>{
