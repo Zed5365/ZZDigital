@@ -47,7 +47,7 @@ label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margi
 .msg.studio{background:color-mix(in oklab,var(--accent) 14%,transparent);margin-left:auto}.msg.client{background:var(--surface-2)}
 .msg .who{font-size:.72rem;color:var(--text-muted);margin-bottom:.2rem}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(6rem,1fr));gap:.5rem;margin-top:.6rem}
-.thumb{aspect-ratio:4/3;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--surface-2)}.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb{position:relative;aspect-ratio:4/3;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--surface-2)}.thumb img{width:100%;height:100%;object-fit:cover}
 .inline{display:flex;gap:.5rem}.inline input{flex:1}
 .login-wrap{min-height:calc(100vh - 4rem);display:grid;place-items:center;padding:2rem 1rem}.login-card{width:100%;max-width:23rem;padding:1.8rem}
 </style>
@@ -134,6 +134,13 @@ label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margi
       <p class="muted" style="margin:.8rem 0 .3rem">Notes</p><p id="p-notes">—</p>
     </div>
     <div class="card panel"><h2>Images <span class="pdot hidden" id="a-ping-img"></span></h2><div class="thumbs" id="p-thumbs"></div><p class="muted" id="no-img"></p></div>
+    <div class="card panel hidden" id="a-typo-panel">
+      <h2>Typography <span class="pdot hidden" id="a-ping-typo"></span></h2>
+      <p class="muted">Client sends reference images per set. Deliver by setting notes/status and uploading result images.</p>
+      <div id="a-typo-list"></div>
+      <div class="inline" style="margin-top:.7rem"><input id="a-typo-title" placeholder="New set (optional)"><button class="btn btn--ghost btn--sm" id="a-typo-add">Add set</button></div>
+      <div id="a-typo-msg"></div>
+    </div>
     <div class="card panel">
       <h2>Messages <span class="pdot hidden" id="a-ping-msg"></span></h2>
       <div id="thread"></div>
@@ -230,8 +237,75 @@ async function openProject(p){
   const imgCur=imgs.length+"|"+(imgs.length?imgs[imgs.length-1].created_at:""); const imgPrev=store.get("aimg_"+p.id);
   $("#a-ping-img").classList.toggle("hidden", !(imgPrev!==null && imgPrev!==imgCur));
   store.set("aimg_"+p.id, imgCur);
+  aRenderTypo();
   loadThread();
 }
+
+// ── typography (website perk) ─────────────────────────
+function aTypoSetHTML(s){
+  const refs=(s.reference||[]).map(im=>`<div class="thumb"><img src="${esc(im.url)}" onerror="this.style.opacity=.2"></div>`).join("");
+  const results=(s.result||[]).map(im=>`<div class="thumb"><img src="${esc(im.url)}" onerror="this.style.opacity=.2"><button data-ardel="${im.id}" title="Remove" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;cursor:pointer">✕</button></div>`).join("");
+  const opt=v=>`<option${s.status===v?" selected":""}>${v}</option>`;
+  return `<div class="card" style="padding:1rem;margin-bottom:.7rem">
+    <div style="display:flex;justify-content:space-between;gap:.6rem;align-items:center">
+      <b>${esc(s.title)}</b>
+      <select data-astatus="${s.id}" style="width:auto">${opt("requested")}${opt("in progress")}${opt("delivered")}</select>
+    </div>
+    ${s.brief?`<p class="muted" style="margin-top:.4rem"><b>Client:</b> ${esc(s.brief)}</p>`:""}
+    <p class="muted" style="margin-top:.6rem">Client references</p>
+    <div class="thumbs" style="position:relative">${refs||'<p class="muted">None yet.</p>'}</div>
+    <div class="field" style="margin-top:.7rem"><label>Typography notes (fonts, pairings, sizes)</label><textarea data-anotes="${s.id}" rows="2">${esc(s.notes||"")}</textarea></div>
+    <p class="muted">Delivered results</p>
+    <div class="thumbs">${results||'<p class="muted">None yet.</p>'}</div>
+    <div class="inline" style="margin-top:.6rem;flex-wrap:wrap;gap:.4rem">
+      <button class="btn btn--primary btn--sm" data-asave="${s.id}">Save</button>
+      <button class="btn btn--ghost btn--sm" data-aup="${s.id}">⬆ Upload results</button>
+      <button class="btn btn--ghost btn--sm" data-adelset="${s.id}" style="color:var(--red)">Delete</button>
+    </div>
+    <input type="file" data-afile="${s.id}" accept="image/*" multiple hidden>
+    <div data-amsg="${s.id}"></div>
+  </div>`;
+}
+async function aRenderTypo(){
+  const isWebsite=/web/i.test(selProject.kind||"");
+  $("#a-typo-panel").classList.toggle("hidden", !isWebsite);
+  if(!isWebsite) return;
+  let sets=[]; try{ sets=await api("/api/projects/"+selProject.id+"/typography"); }catch{}
+  const cur=JSON.stringify(sets.map(s=>[s.id,(s.reference||[]).length,s.brief,s.client_updated_at]));
+  const prev=store.get("atypo_"+selProject.id);
+  $("#a-ping-typo").classList.toggle("hidden", !(prev!==null && prev!==cur));
+  store.set("atypo_"+selProject.id, cur);
+  $("#a-typo-list").innerHTML=sets.length?sets.map(aTypoSetHTML).join(""):`<p class="muted">No sets yet.</p>`;
+  sets.forEach(aWireTypo);
+  $$("#a-typo-list [data-ardel]").forEach(b=>b.addEventListener("click", async ()=>{ try{ await api("/api/typography-images/"+b.dataset.ardel,{method:"DELETE"}); }catch{} aRenderTypo(); }));
+}
+function aWireTypo(s){
+  const q=sel=>document.querySelector(sel), msg=q(`[data-amsg="${s.id}"]`);
+  q(`[data-asave="${s.id}"]`).addEventListener("click", async ()=>{
+    try{ await api("/api/typography/"+s.id,{method:"PATCH",body:JSON.stringify({notes:q(`[data-anotes="${s.id}"]`).value,status:q(`[data-astatus="${s.id}"]`).value})}); note(msg,"ok","Saved."); }
+    catch(e){ note(msg,"err",e.message); }
+  });
+  q(`[data-aup="${s.id}"]`).addEventListener("click", ()=>q(`[data-afile="${s.id}"]`).click());
+  q(`[data-afile="${s.id}"]`).addEventListener("change", e=>aUploadTypo(s.id,e.target.files,msg));
+  q(`[data-adelset="${s.id}"]`).addEventListener("click", async ()=>{ if(!confirm("Delete this set and its images?"))return; try{ await api("/api/typography/"+s.id,{method:"DELETE"}); aRenderTypo(); }catch(e){ note(msg,"err",e.message); } });
+}
+async function aUploadTypo(sid, fileList, msgEl){
+  const files=[...fileList].filter(f=>f.type&&f.type.indexOf("image/")===0);
+  if(!files.length) return note(msgEl,"err","No image files found.");
+  const fd=new FormData(); files.forEach(f=>fd.append("files",f,f.name));
+  note(msgEl,"","Uploading "+files.length+"…");
+  try{
+    const res=await fetch(API+"/api/typography/"+sid+"/upload",{method:"POST",credentials:"include",body:fd});
+    const data=await res.json();
+    if(!res.ok) throw new Error((data&&data.detail)||"Upload failed");
+    aRenderTypo();
+  }catch(e){ note(msgEl,"err",e.message); }
+}
+$("#a-typo-add").addEventListener("click", async ()=>{
+  const title=$("#a-typo-title").value.trim(); if(!title) return note($("#a-typo-msg"),"err","Give the set a name.");
+  try{ await api("/api/projects/"+selProject.id+"/typography",{method:"POST",body:JSON.stringify({title})}); $("#a-typo-title").value=""; $("#a-typo-msg").innerHTML=""; aRenderTypo(); }
+  catch(e){ note($("#a-typo-msg"),"err",e.message); }
+});
 $("#back-client").addEventListener("click",()=>openClient(selClient));
 $("#save-proj").addEventListener("click", async ()=>{
   $("#save-proj").disabled=true;

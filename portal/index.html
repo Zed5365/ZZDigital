@@ -170,6 +170,14 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
       <div id="url-msg"></div>
     </div>
 
+    <div class="card panel hidden" id="typo-panel" style="margin-bottom:1.2rem">
+      <h2>Typography <span class="muted" style="font-weight:400;font-size:.78rem">— a website perk</span> <span class="pdot hidden" id="ping-typo"></span></h2>
+      <p class="muted">Send us reference images of a thing — a name, a sign, a menu header — and we'll craft custom typography for it. Make one set per thing.</p>
+      <div id="typo-list"></div>
+      <div class="urlrow" style="margin-top:.9rem"><input id="typo-new-title" placeholder="New set name — e.g. Café name"><button class="btn btn--primary btn--sm" id="typo-add-set">Add set</button></div>
+      <div id="typo-msg"></div>
+    </div>
+
     <div class="card panel">
       <h2>Messages with ZZ Digital <span class="pdot hidden" id="ping-msg"></span></h2>
       <div id="thread"></div>
@@ -283,7 +291,7 @@ async function openProject(id, projects){
   $("#ping-info").classList.toggle("hidden", !(infoPrev !== null && infoPrev !== infoCur));
   store.set("cinfo_" + p.id, infoCur);
   show("detail"); window.scrollTo(0,0);
-  await renderImages(); await renderThread();
+  await renderImages(); await renderTypography(); await renderThread();
 }
 $("#back").addEventListener("click", openDashboard);
 
@@ -329,6 +337,92 @@ async function uploadFiles(fileList){
   } catch (e){ note($("#url-msg"), "err", e.message); }
   $("#file-input").value = ""; $("#folder-input").value = "";
 }
+
+// ── typography (website perk) ─────────────────────────
+function typoSetHTML(s){
+  const refs = (s.reference||[]).map(im => `<div class="thumb"><img src="${esc(im.url)}" alt="" onerror="this.style.opacity=.2"><button data-tdel="${im.id}" title="Remove">✕</button></div>`).join("");
+  const results = (s.result||[]).map(im => `<div class="thumb"><img src="${esc(im.url)}" alt="" onerror="this.style.opacity=.2"></div>`).join("");
+  const delivered = (s.result && s.result.length) || s.notes
+    ? `<div style="margin-top:.9rem;border-top:1px solid var(--line);padding-top:.7rem">
+         <p class="muted" style="font-weight:650;color:var(--mint)">Delivered typography</p>
+         ${s.notes ? `<p style="margin:.35rem 0;white-space:pre-wrap">${esc(s.notes)}</p>` : ""}
+         ${results ? `<div class="thumbs">${results}</div>` : ""}
+       </div>` : "";
+  return `<div class="card" style="padding:1rem;margin-top:.8rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem">
+      <b>${esc(s.title)}</b><span class="pill" style="margin-top:0">${esc(s.status||"requested")}</span>
+    </div>
+    <div class="field" style="margin:.6rem 0 0"><label>What is this for? (describe the thing)</label>
+      <textarea data-tbrief="${s.id}" rows="2" placeholder="e.g. The café's name, warm and handwritten">${esc(s.brief||"")}</textarea></div>
+    <div class="urlrow" style="flex-wrap:wrap">
+      <button class="btn btn--ghost btn--sm" data-tsave="${s.id}">Save</button>
+      <button class="btn btn--ghost btn--sm" data-tup="${s.id}">⬆ Upload references</button>
+      <button class="btn btn--ghost btn--sm" data-tupf="${s.id}">⬆ Upload folder</button>
+      <button class="btn btn--ghost btn--sm" data-tdelset="${s.id}" style="margin-left:auto;color:var(--red)">Delete</button>
+    </div>
+    <input type="file" data-tfile="${s.id}" accept="image/*" multiple hidden>
+    <input type="file" data-tfolder="${s.id}" webkitdirectory hidden>
+    <div class="thumbs">${refs || '<p class="muted" style="margin-top:.6rem">No reference images yet.</p>'}</div>
+    ${delivered}
+    <div data-tmsg="${s.id}"></div>
+  </div>`;
+}
+async function renderTypography(){
+  const panel = $("#typo-panel");
+  const isWebsite = /web/i.test(current.kind || "");
+  panel.classList.toggle("hidden", !isWebsite);
+  if (!isWebsite) return;
+  let sets = []; try { sets = await api("/api/projects/" + current.id + "/typography"); } catch {}
+  // ping the panel if the studio delivered/changed something since last view
+  const cur = JSON.stringify(sets.map(s => [s.id, (s.result||[]).length, s.notes, s.status]));
+  const prev = store.get("ctypo_" + current.id);
+  $("#ping-typo").classList.toggle("hidden", !(prev !== null && prev !== cur));
+  store.set("ctypo_" + current.id, cur);
+  $("#typo-list").innerHTML = sets.length
+    ? sets.map(typoSetHTML).join("")
+    : `<p class="muted" style="margin-top:.6rem">No sets yet — add one below to get started.</p>`;
+  sets.forEach(wireTypoSet);
+  $$("#typo-list [data-tdel]").forEach(b => b.addEventListener("click", async () => {
+    try { await api("/api/typography-images/" + b.dataset.tdel, { method: "DELETE" }); } catch {}
+    renderTypography();
+  }));
+}
+function wireTypoSet(s){
+  const q = sel => document.querySelector(sel), msg = q(`[data-tmsg="${s.id}"]`);
+  q(`[data-tsave="${s.id}"]`).addEventListener("click", async () => {
+    try { await api("/api/typography/" + s.id, { method: "PATCH", body: JSON.stringify({ brief: q(`[data-tbrief="${s.id}"]`).value }) }); note(msg, "ok", "Saved."); }
+    catch (e){ note(msg, "err", e.message); }
+  });
+  q(`[data-tup="${s.id}"]`).addEventListener("click", () => q(`[data-tfile="${s.id}"]`).click());
+  q(`[data-tupf="${s.id}"]`).addEventListener("click", () => q(`[data-tfolder="${s.id}"]`).click());
+  q(`[data-tfile="${s.id}"]`).addEventListener("change", e => uploadTypo(s.id, e.target.files, msg));
+  q(`[data-tfolder="${s.id}"]`).addEventListener("change", e => uploadTypo(s.id, e.target.files, msg));
+  q(`[data-tdelset="${s.id}"]`).addEventListener("click", async () => {
+    if (!confirm("Delete this set and its images?")) return;
+    try { await api("/api/typography/" + s.id, { method: "DELETE" }); renderTypography(); }
+    catch (e){ note(msg, "err", e.message); }
+  });
+}
+async function uploadTypo(sid, fileList, msgEl){
+  const files = [...fileList].filter(f => f.type && f.type.indexOf("image/") === 0);
+  if (!files.length) return note(msgEl, "err", "No image files found in that selection.");
+  const fd = new FormData(); files.forEach(f => fd.append("files", f, f.name));
+  note(msgEl, "", "Uploading " + files.length + " image" + (files.length > 1 ? "s" : "") + "…");
+  try {
+    const res = await fetch(API + "/api/typography/" + sid + "/upload", { method: "POST", credentials: "include", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error((data && data.detail) || "Upload failed");
+    renderTypography();
+  } catch (e){ note(msgEl, "err", e.message); }
+}
+$("#typo-add-set").addEventListener("click", async () => {
+  const title = $("#typo-new-title").value.trim();
+  if (!title) return note($("#typo-msg"), "err", "Give the set a name first.");
+  $("#typo-add-set").disabled = true;
+  try { await api("/api/projects/" + current.id + "/typography", { method: "POST", body: JSON.stringify({ title }) }); $("#typo-new-title").value = ""; $("#typo-msg").innerHTML = ""; renderTypography(); }
+  catch (e){ note($("#typo-msg"), "err", e.message); }
+  finally { $("#typo-add-set").disabled = false; }
+});
 
 async function renderThread(){
   let msgs = []; try { msgs = await api("/api/projects/" + current.id + "/messages"); } catch {}

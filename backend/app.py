@@ -47,9 +47,37 @@ def verify_pw(password: str, hashed: str) -> bool:
     except (ValueError, TypeError):
         return False
 
+# Additive tables created on startup so an existing DB gets them without a manual
+# migration (the schema.sql init script only runs on a fresh data dir).
+TYPO_SCHEMA = """
+create table if not exists typography_sets (
+  id                uuid primary key default gen_random_uuid(),
+  project_id        uuid not null references projects(id) on delete cascade,
+  title             text not null,
+  brief             text,                                   -- client's description of the thing
+  notes             text,                                   -- admin's typography notes (fonts, pairings)
+  status            text not null default 'requested',      -- requested / in progress / delivered
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),     -- bumped by studio
+  client_updated_at timestamptz                             -- bumped by client
+);
+create index if not exists typo_sets_project_idx on typography_sets(project_id);
+
+create table if not exists typography_images (
+  id         uuid primary key default gen_random_uuid(),
+  set_id     uuid not null references typography_sets(id) on delete cascade,
+  url        text not null,
+  role       text not null check (role in ('reference','result')),  -- client refs vs studio deliverables
+  created_at timestamptz not null default now()
+);
+create index if not exists typo_images_set_idx on typography_images(set_id);
+"""
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+    async with app.state.pool.acquire() as con:
+        await con.execute(TYPO_SCHEMA)
     yield
     await app.state.pool.close()
 
@@ -105,6 +133,11 @@ class ImageIn(BaseModel):
     url: str
 class MessageIn(BaseModel):
     body: str
+class TypoSetIn(BaseModel):
+    title: str; brief: str | None = None
+class TypoSetPatch(BaseModel):
+    title: str | None = None; brief: str | None = None
+    notes: str | None = None; status: str | None = None
 
 def public_user(u): return {k: u[k] for k in ("id", "email", "name", "business", "is_admin")}
 
@@ -166,12 +199,53 @@ def _slug(text, fallback):
     out = out.strip("-_.")[:60]
     return out or fallback
 
+def _taken_names(rows):
+    # filenames already used (from stored URLs) so new uploads never overwrite them
+    return {unquote(r["url"].rstrip("/").rsplit("/", 1)[-1]) for r in rows}
+
+async def _put_images(files, key_prefix, taken):
+    # Validate + store each image under key_prefix/<filename>, de-duping names
+    # against `taken` (photo.jpg → photo-2.jpg…). Returns [(filename, url), …].
+    stored = []
+    for f in files:
+        data = await f.read()
+        if len(data) > 15 * 1024 * 1024:
+            raise HTTPException(413, (f.filename or "file") + " is too large (max 15 MB)")
+        ctype = (f.content_type or "").lower()
+        if ctype not in ALLOWED_IMG:
+            raise HTTPException(400, (f.filename or "file") + ": only image files are allowed")
+        base = _slug(f.filename, "image")
+        n, candidate = 1, base
+        while candidate in taken:
+            n += 1
+            stem, dot, ext = base.rpartition(".")
+            candidate = f"{stem}-{n}.{ext}" if dot else f"{base}-{n}"
+        taken.add(candidate)
+        key = f"{key_prefix}/{candidate}"
+        await run_in_threadpool(s3.put_object, Bucket=UPLOADS_BUCKET, Key=key, Body=data, ContentType=ctype)
+        url = f"https://{UPLOADS_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{quote(key)}"
+        stored.append((candidate, url))
+    return stored
+
+async def _project_prefix(request, proj):
+    # S3 key prefix "<Client Name>/<Project Title>" for a project's uploads
+    owner = await pool(request).fetchrow(
+        "select name, business, email from users where id=$1", proj["user_id"])
+    client_name = owner and (owner["name"] or owner["business"] or owner["email"].split("@")[0])
+    return f"{_slug(client_name, 'client')}/{_slug(proj['title'], 'project')}"
+
 async def _owned_project(request, user, pid):
     row = await pool(request).fetchrow("select * from projects where id=$1", pid)
     if not row: raise HTTPException(404, "Project not found")
     if not user["is_admin"] and str(row["user_id"]) != str(user["id"]):
         raise HTTPException(403, "Not your project")
     return row
+
+async def _owned_set(request, user, sid):
+    s = await pool(request).fetchrow("select * from typography_sets where id=$1", sid)
+    if not s: raise HTTPException(404, "Typography set not found")
+    proj = await _owned_project(request, user, str(s["project_id"]))
+    return s, proj
 
 @app.patch("/api/projects/{pid}")
 async def patch_project(pid: str, body: ProjectPatch, request: Request, user=Depends(current_user)):
@@ -224,41 +298,102 @@ async def del_image(iid: str, request: Request, user=Depends(current_user)):
 @app.post("/api/projects/{pid}/upload")
 async def upload_images(pid: str, request: Request, user=Depends(current_user), files: list[UploadFile] = File(...)):
     proj = await _owned_project(request, user, pid)
-    owner = await pool(request).fetchrow(
-        "select name, business, email from users where id=$1", proj["user_id"])
-    client_name = (owner and (owner["name"] or owner["business"] or owner["email"].split("@")[0]))
-    client_folder  = _slug(client_name, "client")
-    project_folder = _slug(proj["title"], "project")
-    # Names already used in this project (from the DB) so same-named uploads
-    # never overwrite an existing image — they get photo-2.jpg, photo-3.jpg…
+    prefix = await _project_prefix(request, proj)
     existing = await pool(request).fetch(
         "select url from project_images where project_id=$1", pid)
-    taken = {unquote(r["url"].rstrip("/").rsplit("/", 1)[-1]) for r in existing}
+    taken = _taken_names(existing)
+    stored = await _put_images(files, prefix, taken)
     saved = []
-    for f in files:
-        data = await f.read()
-        if len(data) > 15 * 1024 * 1024:
-            raise HTTPException(413, (f.filename or "file") + " is too large (max 15 MB)")
-        ctype = (f.content_type or "").lower()
-        if ctype not in ALLOWED_IMG:
-            raise HTTPException(400, (f.filename or "file") + ": only image files are allowed")
-        base = _slug(f.filename, "image")
-        n, candidate = 1, base
-        while candidate in taken:
-            n += 1
-            stem, dot, ext = base.rpartition(".")
-            candidate = f"{stem}-{n}.{ext}" if dot else f"{base}-{n}"
-        taken.add(candidate)
-        base = candidate
-        key = f"{client_folder}/{project_folder}/{base}"
-        await run_in_threadpool(s3.put_object, Bucket=UPLOADS_BUCKET, Key=key, Body=data, ContentType=ctype)
-        url = f"https://{UPLOADS_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{quote(key)}"
+    for _base, url in stored:
         row = await pool(request).fetchrow(
             "insert into project_images(project_id,url) values($1,$2) returning *", pid, url)
         saved.append(dict(row))
     if not user["is_admin"]:
         await pool(request).execute("update projects set client_updated_at=now() where id=$1", pid)
     return saved
+
+# ── typography (a website-project perk) ──────────────────
+# Client makes named "sets" (one per thing) and uploads reference images;
+# the studio delivers back result images + typography notes per set.
+async def _set_with_images(request, s):
+    imgs = await pool(request).fetch(
+        "select * from typography_images where set_id=$1 order by created_at", s["id"])
+    d = dict(s)
+    d["reference"] = [dict(i) for i in imgs if i["role"] == "reference"]
+    d["result"]    = [dict(i) for i in imgs if i["role"] == "result"]
+    return d
+
+@app.get("/api/projects/{pid}/typography")
+async def list_typography(pid: str, request: Request, user=Depends(current_user)):
+    await _owned_project(request, user, pid)
+    sets = await pool(request).fetch(
+        "select * from typography_sets where project_id=$1 order by created_at", pid)
+    return [await _set_with_images(request, s) for s in sets]
+
+@app.post("/api/projects/{pid}/typography")
+async def create_typography(pid: str, body: TypoSetIn, request: Request, user=Depends(current_user)):
+    await _owned_project(request, user, pid)
+    if not (body.title or "").strip():
+        raise HTTPException(400, "Give the set a name")
+    row = await pool(request).fetchrow(
+        "insert into typography_sets(project_id,title,brief) values($1,$2,$3) returning *",
+        pid, body.title.strip(), body.brief)
+    col = "updated_at" if user["is_admin"] else "client_updated_at"
+    await pool(request).execute(f"update projects set {col}=now() where id=$1", pid)
+    return await _set_with_images(request, row)
+
+@app.patch("/api/typography/{sid}")
+async def patch_typography(sid: str, body: TypoSetPatch, request: Request, user=Depends(current_user)):
+    s, proj = await _owned_set(request, user, sid)
+    # clients own title/brief (their request); the studio owns notes/status/title
+    allowed = ("title", "brief", "notes", "status") if user["is_admin"] else ("title", "brief")
+    fields = {k: getattr(body, k) for k in allowed if getattr(body, k) is not None}
+    if not fields:
+        return await _set_with_images(request, s)
+    sets, vals = [], []
+    for k, v in fields.items():
+        vals.append(v); sets.append(f"{k}=${len(vals)}")
+    sets.append("updated_at=now()" if user["is_admin"] else "client_updated_at=now()")
+    vals.append(sid)
+    row = await pool(request).fetchrow(
+        f"update typography_sets set {', '.join(sets)} where id=${len(vals)} returning *", *vals)
+    col = "updated_at" if user["is_admin"] else "client_updated_at"
+    await pool(request).execute(f"update projects set {col}=now() where id=$1", proj["id"])
+    return await _set_with_images(request, row)
+
+@app.delete("/api/typography/{sid}")
+async def del_typography(sid: str, request: Request, user=Depends(current_user)):
+    await _owned_set(request, user, sid)
+    await pool(request).execute("delete from typography_sets where id=$1", sid)
+    return {"ok": True}
+
+@app.post("/api/typography/{sid}/upload")
+async def upload_typography(sid: str, request: Request, user=Depends(current_user), files: list[UploadFile] = File(...)):
+    s, proj = await _owned_set(request, user, sid)
+    role = "result" if user["is_admin"] else "reference"   # studio delivers results; client sends references
+    prefix = await _project_prefix(request, proj)
+    set_folder = _slug(s["title"], str(s["id"])[:8])
+    key_prefix = f"{prefix}/typography/{set_folder}/{role}"
+    existing = await pool(request).fetch(
+        "select url from typography_images where set_id=$1 and role=$2", sid, role)
+    stored = await _put_images(files, key_prefix, _taken_names(existing))
+    saved = []
+    for _base, url in stored:
+        row = await pool(request).fetchrow(
+            "insert into typography_images(set_id,url,role) values($1,$2,$3) returning *", sid, url, role)
+        saved.append(dict(row))
+    col = "updated_at" if user["is_admin"] else "client_updated_at"
+    await pool(request).execute(f"update typography_sets set {col}=now() where id=$1", sid)
+    await pool(request).execute(f"update projects set {col}=now() where id=$1", proj["id"])
+    return saved
+
+@app.delete("/api/typography-images/{iid}")
+async def del_typography_image(iid: str, request: Request, user=Depends(current_user)):
+    img = await pool(request).fetchrow("select set_id from typography_images where id=$1", iid)
+    if not img: raise HTTPException(404, "Not found")
+    await _owned_set(request, user, str(img["set_id"]))
+    await pool(request).execute("delete from typography_images where id=$1", iid)
+    return {"ok": True}
 
 # ── messages ─────────────────────────────────────────────
 @app.get("/api/projects/{pid}/messages")

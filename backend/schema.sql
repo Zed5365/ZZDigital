@@ -38,6 +38,30 @@ create table if not exists project_images (
 );
 create index if not exists images_project_idx on project_images(project_id);
 
+-- Typography perk (website projects): client makes named "sets" and uploads
+-- reference images; the studio delivers result images + notes per set.
+create table if not exists typography_sets (
+  id                uuid primary key default gen_random_uuid(),
+  project_id        uuid not null references projects(id) on delete cascade,
+  title             text not null,
+  brief             text,
+  notes             text,
+  status            text not null default 'requested',   -- requested / in progress / delivered
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  client_updated_at timestamptz
+);
+create index if not exists typo_sets_project_idx on typography_sets(project_id);
+
+create table if not exists typography_images (
+  id         uuid primary key default gen_random_uuid(),
+  set_id     uuid not null references typography_sets(id) on delete cascade,
+  url        text not null,
+  role       text not null check (role in ('reference','result')),
+  created_at timestamptz not null default now()
+);
+create index if not exists typo_images_set_idx on typography_images(set_id);
+
 create table if not exists support_messages (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references users(id) on delete cascade,
