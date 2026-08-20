@@ -19,7 +19,7 @@ Env vars:
 """
 import os, datetime as dt, uuid
 from contextlib import asynccontextmanager
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 import asyncpg, jwt, bcrypt, boto3
 from fastapi import FastAPI, Request, Response, HTTPException, Depends, UploadFile, File
@@ -229,7 +229,12 @@ async def upload_images(pid: str, request: Request, user=Depends(current_user), 
     client_name = (owner and (owner["name"] or owner["business"] or owner["email"].split("@")[0]))
     client_folder  = _slug(client_name, "client")
     project_folder = _slug(proj["title"], "project")
-    saved, seen = [], {}
+    # Names already used in this project (from the DB) so same-named uploads
+    # never overwrite an existing image — they get photo-2.jpg, photo-3.jpg…
+    existing = await pool(request).fetch(
+        "select url from project_images where project_id=$1", pid)
+    taken = {unquote(r["url"].rstrip("/").rsplit("/", 1)[-1]) for r in existing}
+    saved = []
     for f in files:
         data = await f.read()
         if len(data) > 15 * 1024 * 1024:
@@ -238,11 +243,13 @@ async def upload_images(pid: str, request: Request, user=Depends(current_user), 
         if ctype not in ALLOWED_IMG:
             raise HTTPException(400, (f.filename or "file") + ": only image files are allowed")
         base = _slug(f.filename, "image")
-        # de-dupe repeated names within this batch so nothing overwrites (photo.jpg, photo-2.jpg…)
-        seen[base] = seen.get(base, 0) + 1
-        if seen[base] > 1:
+        n, candidate = 1, base
+        while candidate in taken:
+            n += 1
             stem, dot, ext = base.rpartition(".")
-            base = f"{stem}-{seen[base]}.{ext}" if dot else f"{base}-{seen[base]}"
+            candidate = f"{stem}-{n}.{ext}" if dot else f"{base}-{n}"
+        taken.add(candidate)
+        base = candidate
         key = f"{client_folder}/{project_folder}/{base}"
         await run_in_threadpool(s3.put_object, Bucket=UPLOADS_BUCKET, Key=key, Body=data, ContentType=ctype)
         url = f"https://{UPLOADS_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{quote(key)}"
