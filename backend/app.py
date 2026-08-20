@@ -224,7 +224,7 @@ async def upload_images(pid: str, request: Request, user=Depends(current_user), 
         if ctype not in ALLOWED_IMG:
             raise HTTPException(400, (f.filename or "file") + ": only image files are allowed")
         base = "".join(c for c in (f.filename or "file") if c.isalnum() or c in "._-")[-80:] or "file"
-        key = f"{user['id']}/{pid}/{uuid.uuid4().hex}-{base}"
+        key = f"{user['id']}/{pid}/{uuid.uuid4().hex}/{base}"
         await run_in_threadpool(s3.put_object, Bucket=UPLOADS_BUCKET, Key=key, Body=data, ContentType=ctype)
         url = f"https://{UPLOADS_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{key}"
         row = await pool(request).fetchrow(
