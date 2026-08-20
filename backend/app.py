@@ -19,6 +19,7 @@ Env vars:
 """
 import os, datetime as dt, uuid
 from contextlib import asynccontextmanager
+from urllib.parse import quote
 
 import asyncpg, jwt, bcrypt, boto3
 from fastapi import FastAPI, Request, Response, HTTPException, Depends, UploadFile, File
@@ -157,6 +158,14 @@ async def create_project(body: ProjectIn, request: Request, admin=Depends(requir
         body.user_id, body.title, body.kind, body.status, body.web_url, body.next_step)
     return dict(row)
 
+def _slug(text, fallback):
+    # Readable S3 folder/file name: keep letters/digits (incl. non-ASCII), turn
+    # spaces & punctuation into single hyphens, trim, cap length.
+    out = "".join(c if (c.isalnum() or c in " -_.") else "-" for c in (text or "").strip())
+    out = "-".join(out.split())
+    out = out.strip("-_.")[:60]
+    return out or fallback
+
 async def _owned_project(request, user, pid):
     row = await pool(request).fetchrow("select * from projects where id=$1", pid)
     if not row: raise HTTPException(404, "Project not found")
@@ -214,8 +223,13 @@ async def del_image(iid: str, request: Request, user=Depends(current_user)):
 
 @app.post("/api/projects/{pid}/upload")
 async def upload_images(pid: str, request: Request, user=Depends(current_user), files: list[UploadFile] = File(...)):
-    await _owned_project(request, user, pid)
-    saved = []
+    proj = await _owned_project(request, user, pid)
+    owner = await pool(request).fetchrow(
+        "select name, business, email from users where id=$1", proj["user_id"])
+    client_name = (owner and (owner["name"] or owner["business"] or owner["email"].split("@")[0]))
+    client_folder  = _slug(client_name, "client")
+    project_folder = _slug(proj["title"], "project")
+    saved, seen = [], {}
     for f in files:
         data = await f.read()
         if len(data) > 15 * 1024 * 1024:
@@ -223,10 +237,15 @@ async def upload_images(pid: str, request: Request, user=Depends(current_user), 
         ctype = (f.content_type or "").lower()
         if ctype not in ALLOWED_IMG:
             raise HTTPException(400, (f.filename or "file") + ": only image files are allowed")
-        base = "".join(c for c in (f.filename or "file") if c.isalnum() or c in "._-")[-80:] or "file"
-        key = f"{user['id']}/{pid}/{uuid.uuid4().hex}/{base}"
+        base = _slug(f.filename, "image")
+        # de-dupe repeated names within this batch so nothing overwrites (photo.jpg, photo-2.jpg…)
+        seen[base] = seen.get(base, 0) + 1
+        if seen[base] > 1:
+            stem, dot, ext = base.rpartition(".")
+            base = f"{stem}-{seen[base]}.{ext}" if dot else f"{base}-{seen[base]}"
+        key = f"{client_folder}/{project_folder}/{base}"
         await run_in_threadpool(s3.put_object, Bucket=UPLOADS_BUCKET, Key=key, Body=data, ContentType=ctype)
-        url = f"https://{UPLOADS_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{key}"
+        url = f"https://{UPLOADS_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{quote(key)}"
         row = await pool(request).fetchrow(
             "insert into project_images(project_id,url) values($1,$2) returning *", pid, url)
         saved.append(dict(row))
