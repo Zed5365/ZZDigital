@@ -17,12 +17,12 @@ Env vars:
                      from this same backend.
     COOKIE_SECURE  "1" in production (HTTPS), "0" for local http.
 """
-import os, json, datetime as dt, uuid
+import os, json, base64, datetime as dt, uuid
 from contextlib import asynccontextmanager
 from urllib.parse import quote, unquote
 
 import asyncpg, jwt, bcrypt, boto3
-from fastapi import FastAPI, Request, Response, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, Request, Response, HTTPException, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, EmailStr
@@ -36,7 +36,19 @@ TOKEN_DAYS     = 30
 UPLOADS_BUCKET = os.environ.get("UPLOADS_BUCKET", "zzdigital-client-uploads")
 AWS_REGION     = os.environ.get("AWS_REGION", "ap-southeast-1")
 ALLOWED_IMG    = {"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/avif"}
+VISION_IMG     = {"image/jpeg", "image/png", "image/webp", "image/gif"}   # types Claude vision accepts
+THEME_MODEL    = os.environ.get("THEME_MODEL", "claude-opus-5")
 s3 = boto3.client("s3", region_name=AWS_REGION)   # AWS creds come from env (AWS_ACCESS_KEY_ID / SECRET)
+
+_anthropic_client = None
+def anthropic_client():
+    global _anthropic_client
+    if _anthropic_client is None:
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            raise HTTPException(503, "The AI theme generator isn't set up yet (missing ANTHROPIC_API_KEY).")
+        import anthropic
+        _anthropic_client = anthropic.Anthropic()
+    return _anthropic_client
 
 def hash_pw(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8")[:72], bcrypt.gensalt()).decode("utf-8")
@@ -286,6 +298,64 @@ async def set_theme(pid: str, body: ThemeIn, request: Request, user=Depends(curr
         f"update projects set theme=$1, {col}=now() where id=$2 returning *",
         body.model_dump(), pid)
     return dict(row)
+
+THEME_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "preset":   {"type": "string", "description": "short human name for this theme, e.g. 'Sunlit Terracotta'"},
+        "accent":   {"type": "string", "description": "primary brand colour as a #rrggbb hex"},
+        "accent2":  {"type": "string", "description": "complementary secondary colour as a #rrggbb hex"},
+        "font":     {"type": "string", "enum": ["sans", "serif", "rounded", "mono"]},
+        "mode":     {"type": "string", "enum": ["auto", "light", "dark"]},
+        "rationale":{"type": "string", "description": "one or two sentences on why this fits"},
+    },
+    "required": ["preset", "accent", "accent2", "font", "mode", "rationale"],
+    "additionalProperties": False,
+}
+THEME_SYSTEM = (
+    "You are a senior brand and web designer. From the client's description and any reference "
+    "images, propose ONE cohesive website theme. Pick tasteful, accessible colours with good "
+    "contrast. 'accent' is the main brand colour, 'accent2' a complementary secondary. 'font' "
+    "must be one of: sans (clean modern), serif (elegant/traditional), rounded (friendly), mono "
+    "(technical). 'mode' is the site's default appearance (auto follows the visitor's device). "
+    "Return colours as #rrggbb hex.")
+
+@app.post("/api/projects/{pid}/theme/generate")
+async def generate_theme(pid: str, request: Request, user=Depends(current_user),
+                         prompt: str = Form(""), files: list[UploadFile] = File(default=[])):
+    await _owned_project(request, user, pid)
+    prompt = (prompt or "").strip()
+    content = []
+    for f in (files or [])[:6]:
+        data = await f.read()
+        ctype = (f.content_type or "").lower()
+        if ctype not in VISION_IMG or len(data) > 5 * 1024 * 1024:
+            continue   # skip oversized / unsupported images rather than fail the whole request
+        content.append({"type": "image", "source": {
+            "type": "base64", "media_type": ctype,
+            "data": base64.standard_b64encode(data).decode("ascii")}})
+    if not prompt and not content:
+        raise HTTPException(400, "Describe the look you want, or add a reference image.")
+    content.append({"type": "text",
+                    "text": prompt or "Suggest a website theme based on these reference images."})
+
+    def _call():
+        return anthropic_client().messages.create(
+            model=THEME_MODEL, max_tokens=2000, system=THEME_SYSTEM,
+            messages=[{"role": "user", "content": content}],
+            output_config={"effort": "low", "format": {"type": "json_schema", "schema": THEME_SCHEMA}})
+    try:
+        resp = await run_in_threadpool(_call)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, "Theme generation failed: " + str(e)[:200])
+
+    text = next((b.text for b in resp.content if getattr(b, "type", None) == "text"), "{}")
+    theme = json.loads(text)
+    if theme.get("font") not in ("sans", "serif", "rounded", "mono"): theme["font"] = "sans"
+    if theme.get("mode") not in ("auto", "light", "dark"): theme["mode"] = "auto"
+    return theme
 
 # ── images ───────────────────────────────────────────────
 @app.get("/api/projects/{pid}/images")

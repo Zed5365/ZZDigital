@@ -98,6 +98,12 @@ label{display:block;font-size:.82rem;font-weight:560;color:var(--text-soft);marg
 .theme-preview{border:1px solid var(--line);border-radius:var(--r-sm);padding:1.2rem;margin:1.1rem 0}
 .theme-preview .tp-h{font-size:1.2rem;font-weight:700;margin-bottom:.2rem}
 .theme-preview .tp-btn{display:inline-block;margin-top:.8rem;padding:.45rem .95rem;border-radius:100px;font-size:.82rem;font-weight:600}
+.theme-ai{border:1px dashed var(--line-strong);border-radius:var(--r-sm);padding:.9rem 1rem;margin-bottom:1.1rem}
+.theme-ai[open]{background:var(--surface-2)}
+.theme-ai summary{cursor:pointer;font-weight:620;font-size:.92rem;list-style:none}
+.theme-ai summary::-webkit-details-marker{display:none}
+.theme-ai summary::before{content:"▸ ";color:var(--accent)}
+.theme-ai[open] summary::before{content:"▾ "}
 footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-muted);font-size:.82rem;text-align:center;margin-top:2rem}
 </style>
 </head>
@@ -172,6 +178,18 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
       <h2>Website theme</h2>
       <p class="muted">Pick a starting look for your site — colours, font and light/dark. We'll build from your choice and fine-tune it with you.</p>
       <div class="theme-presets" id="theme-presets"></div>
+      <details class="theme-ai" id="theme-ai">
+        <summary>✨ Generate a custom theme with AI</summary>
+        <p class="muted" style="margin:.6rem 0">Describe your brand or the vibe you want, and/or add a few reference images. We'll suggest colours and a font — you can tweak them below before saving.</p>
+        <textarea id="th-prompt" rows="3" placeholder="e.g. Cozy artisan coffee shop — warm, earthy, handmade feel"></textarea>
+        <div class="urlrow" style="flex-wrap:wrap;margin-top:.5rem">
+          <button class="btn btn--ghost btn--sm" id="th-ai-imgbtn" type="button">Add reference images</button>
+          <button class="btn btn--primary btn--sm" id="th-ai-go" type="button">✨ Generate theme</button>
+        </div>
+        <input type="file" id="th-ai-files" accept="image/*" multiple hidden>
+        <div id="th-ai-picked" class="muted" style="margin-top:.4rem"></div>
+        <div id="th-ai-msg"></div>
+      </details>
       <div class="theme-custom">
         <div class="field"><label for="th-accent">Main colour</label><input type="color" id="th-accent"></div>
         <div class="field"><label for="th-accent2">Accent colour</label><input type="color" id="th-accent2"></div>
@@ -387,6 +405,7 @@ function renderTheme(){
   if (!show) return;
   themeState = (current.theme && typeof current.theme === "object") ? { ...TH_DEFAULT, ...current.theme } : { ...TH_DEFAULT };
   fillFontSelect(); renderThemePresets(); syncThemeInputs(); updateThemePreview(); $("#theme-msg").innerHTML = "";
+  $("#th-prompt").value = ""; aiThemeFiles = []; $("#th-ai-picked").textContent = ""; $("#th-ai-msg").innerHTML = "";
 }
 $("#save-theme").addEventListener("click", async () => {
   $("#save-theme").disabled = true;
@@ -396,6 +415,37 @@ $("#save-theme").addEventListener("click", async () => {
     note($("#theme-msg"), "ok", "Theme saved — we'll use this as your starting point.");
   } catch (e){ note($("#theme-msg"), "err", e.message); }
   finally { $("#save-theme").disabled = false; }
+});
+
+// AI theme generation from a prompt + reference images
+let aiThemeFiles = [];
+const okHex = v => /^#[0-9a-f]{6}$/i.test(v || "");
+$("#th-ai-imgbtn").addEventListener("click", () => $("#th-ai-files").click());
+$("#th-ai-files").addEventListener("change", e => {
+  aiThemeFiles = [...e.target.files].filter(f => f.type && f.type.indexOf("image/") === 0).slice(0, 6);
+  $("#th-ai-picked").textContent = aiThemeFiles.length ? (aiThemeFiles.length + " image" + (aiThemeFiles.length > 1 ? "s" : "") + " attached") : "";
+});
+$("#th-ai-go").addEventListener("click", async () => {
+  const prompt = $("#th-prompt").value.trim();
+  if (!prompt && !aiThemeFiles.length) return note($("#th-ai-msg"), "err", "Describe the look, or add a reference image.");
+  const fd = new FormData(); fd.append("prompt", prompt);
+  aiThemeFiles.forEach(f => fd.append("files", f, f.name));
+  $("#th-ai-go").disabled = true; note($("#th-ai-msg"), "", "Generating your theme… this can take a few seconds.");
+  try {
+    const res = await fetch(API + "/api/projects/" + current.id + "/theme/generate", { method: "POST", credentials: "include", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error((data && data.detail) || "Generation failed");
+    themeState = {
+      preset:  data.preset || "Custom",
+      accent:  okHex(data.accent)  ? data.accent  : themeState.accent,
+      accent2: okHex(data.accent2) ? data.accent2 : themeState.accent2,
+      font:    TH_FONTS[data.font] ? data.font : "sans",
+      mode:    ["auto","light","dark"].includes(data.mode) ? data.mode : "auto",
+    };
+    syncThemeInputs(); updateThemePreview();
+    note($("#th-ai-msg"), "ok", (data.rationale ? data.rationale + " " : "") + "Tweak it below if you like, then Save theme.");
+  } catch (e){ note($("#th-ai-msg"), "err", e.message); }
+  finally { $("#th-ai-go").disabled = false; }
 });
 
 async function renderImages(){
