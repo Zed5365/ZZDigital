@@ -17,7 +17,7 @@ Env vars:
                      from this same backend.
     COOKIE_SECURE  "1" in production (HTTPS), "0" for local http.
 """
-import os, datetime as dt, uuid
+import os, json, datetime as dt, uuid
 from contextlib import asynccontextmanager
 from urllib.parse import quote, unquote
 
@@ -71,11 +71,18 @@ create table if not exists typography_images (
   created_at timestamptz not null default now()
 );
 create index if not exists typo_images_set_idx on typography_images(set_id);
+
+-- Client's preferred website theme (colours / font / light-dark), free-form JSON.
+alter table projects add column if not exists theme jsonb;
 """
+
+async def _init_con(con):
+    # round-trip jsonb as Python dict/list instead of raw text
+    await con.set_type_codec("jsonb", encoder=json.dumps, decoder=json.loads, schema="pg_catalog")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+    app.state.pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10, init=_init_con)
     async with app.state.pool.acquire() as con:
         await con.execute(TYPO_SCHEMA)
     yield
@@ -133,6 +140,10 @@ class ImageIn(BaseModel):
     url: str
 class MessageIn(BaseModel):
     body: str
+class ThemeIn(BaseModel):
+    preset: str | None = None
+    accent: str | None = None; accent2: str | None = None
+    font: str | None = None; mode: str | None = None
 class TypoSetIn(BaseModel):
     title: str; brief: str | None = None
 class TypoSetPatch(BaseModel):
@@ -265,6 +276,15 @@ async def patch_project(pid: str, body: ProjectPatch, request: Request, user=Dep
     vals.append(pid)
     row = await pool(request).fetchrow(
         f"update projects set {', '.join(sets)} where id=${len(vals)} returning *", *vals)
+    return dict(row)
+
+@app.put("/api/projects/{pid}/theme")
+async def set_theme(pid: str, body: ThemeIn, request: Request, user=Depends(current_user)):
+    await _owned_project(request, user, pid)
+    col = "updated_at" if user["is_admin"] else "client_updated_at"
+    row = await pool(request).fetchrow(
+        f"update projects set theme=$1, {col}=now() where id=$2 returning *",
+        body.model_dump(), pid)
     return dict(row)
 
 # ── images ───────────────────────────────────────────────

@@ -86,6 +86,18 @@ label{display:block;font-size:.82rem;font-weight:560;color:var(--text-soft);marg
 .msg.client{background:color-mix(in oklab,var(--accent) 14%,transparent);margin-left:auto}
 .msg .who{font-size:.72rem;color:var(--text-muted);margin-bottom:.2rem}
 .muted{color:var(--text-muted);font-size:.86rem}
+.theme-presets{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0 1.1rem}
+.theme-chip{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line-strong);background:var(--surface);border-radius:100px;padding:.35rem .8rem .35rem .45rem;cursor:pointer;font:inherit;font-size:.82rem;font-weight:560;color:var(--text)}
+.theme-chip.sel{outline:2px solid var(--accent);border-color:transparent}
+.theme-chip .sw{display:inline-flex}
+.theme-chip .sw i{width:15px;height:15px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15)}
+.theme-chip .sw i+i{margin-left:-5px}
+.theme-custom{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.7rem}
+.theme-custom .field{margin-bottom:0}
+.theme-custom input[type=color]{padding:.2rem;height:2.5rem;cursor:pointer}
+.theme-preview{border:1px solid var(--line);border-radius:var(--r-sm);padding:1.2rem;margin:1.1rem 0}
+.theme-preview .tp-h{font-size:1.2rem;font-weight:700;margin-bottom:.2rem}
+.theme-preview .tp-btn{display:inline-block;margin-top:.8rem;padding:.45rem .95rem;border-radius:100px;font-size:.82rem;font-weight:600}
 footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-muted);font-size:.82rem;text-align:center;margin-top:2rem}
 </style>
 </head>
@@ -154,6 +166,21 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
         <p class="muted">Your web address</p><p id="d-url" style="margin-bottom:1rem"></p>
         <p class="muted">Next step</p><p id="d-next"></p>
       </div>
+    </div>
+
+    <div class="card panel" id="theme-panel" style="margin-bottom:1.2rem">
+      <h2>Website theme</h2>
+      <p class="muted">Pick a starting look for your site — colours, font and light/dark. We'll build from your choice and fine-tune it with you.</p>
+      <div class="theme-presets" id="theme-presets"></div>
+      <div class="theme-custom">
+        <div class="field"><label for="th-accent">Main colour</label><input type="color" id="th-accent"></div>
+        <div class="field"><label for="th-accent2">Accent colour</label><input type="color" id="th-accent2"></div>
+        <div class="field"><label for="th-font">Font style</label><select id="th-font"></select></div>
+        <div class="field"><label for="th-mode">Appearance</label><select id="th-mode"><option value="auto">Auto (light &amp; dark)</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+      </div>
+      <div class="theme-preview" id="theme-preview"></div>
+      <button class="btn btn--primary btn--sm" id="save-theme">Save theme</button>
+      <div id="theme-msg"></div>
     </div>
 
     <div class="card panel" style="margin-bottom:1.2rem">
@@ -291,7 +318,7 @@ async function openProject(id, projects){
   $("#ping-info").classList.toggle("hidden", !(infoPrev !== null && infoPrev !== infoCur));
   store.set("cinfo_" + p.id, infoCur);
   show("detail"); window.scrollTo(0,0);
-  await renderImages(); await renderTypography(); await renderThread();
+  renderTheme(); await renderImages(); await renderTypography(); await renderThread();
 }
 $("#back").addEventListener("click", openDashboard);
 
@@ -303,6 +330,72 @@ $("#save-details").addEventListener("click", async () => {
     note($("#save-msg"), "ok", "Saved.");
   } catch (e){ note($("#save-msg"), "err", e.message); }
   finally { $("#save-details").disabled = false; }
+});
+
+// ── website theme picker ──────────────────────────────
+const TH_FONTS = {
+  sans:{label:"System sans", stack:'"Segoe UI",system-ui,-apple-system,Arial,sans-serif'},
+  serif:{label:"Elegant serif", stack:'Georgia,"Times New Roman",serif'},
+  rounded:{label:"Rounded", stack:'"Trebuchet MS","Segoe UI",system-ui,sans-serif'},
+  mono:{label:"Modern mono", stack:'ui-monospace,"Cascadia Code",Consolas,monospace'},
+};
+const TH_PRESETS = [
+  {name:"Violet Mint", accent:"#6d5efc", accent2:"#0fb894", font:"sans",    mode:"auto"},
+  {name:"Warm Café",   accent:"#c2683a", accent2:"#e0a400", font:"serif",   mode:"light"},
+  {name:"Fresh Mint",  accent:"#0fb894", accent2:"#6d5efc", font:"sans",    mode:"light"},
+  {name:"Midnight",    accent:"#8b7dff", accent2:"#2ee0b5", font:"sans",    mode:"dark"},
+  {name:"Rose",        accent:"#e05c7e", accent2:"#f0a500", font:"rounded", mode:"light"},
+  {name:"Mono Ink",    accent:"#1f2937", accent2:"#6b7280", font:"mono",    mode:"light"},
+];
+const TH_DEFAULT = {preset:"Violet Mint", accent:"#6d5efc", accent2:"#0fb894", font:"sans", mode:"auto"};
+let themeState = {...TH_DEFAULT};
+
+function fillFontSelect(){ $("#th-font").innerHTML = Object.entries(TH_FONTS).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join(""); }
+function renderThemePresets(){
+  $("#theme-presets").innerHTML = TH_PRESETS.map(p => `<button type="button" class="theme-chip" data-preset="${esc(p.name)}"><span class="sw"><i style="background:${p.accent}"></i><i style="background:${p.accent2}"></i></span>${esc(p.name)}</button>`).join("");
+  $$("#theme-presets .theme-chip").forEach(b => b.addEventListener("click", () => {
+    const p = TH_PRESETS.find(x => x.name === b.dataset.preset); if (!p) return;
+    themeState = { preset:p.name, accent:p.accent, accent2:p.accent2, font:p.font, mode:p.mode };
+    syncThemeInputs(); updateThemePreview();
+  }));
+}
+function syncThemeInputs(){
+  $("#th-accent").value  = themeState.accent  || "#6d5efc";
+  $("#th-accent2").value = themeState.accent2 || "#0fb894";
+  $("#th-font").value = TH_FONTS[themeState.font] ? themeState.font : "sans";
+  $("#th-mode").value = ["auto","light","dark"].includes(themeState.mode) ? themeState.mode : "auto";
+  $$("#theme-presets .theme-chip").forEach(b => b.classList.toggle("sel", b.dataset.preset === themeState.preset));
+}
+function updateThemePreview(){
+  const dark = themeState.mode === "dark";
+  const bg = dark ? "#12121b" : "#ffffff", text = dark ? "#f4f3f8" : "#141118", muted = dark ? "#9a95a8" : "#6f6a78";
+  const font = (TH_FONTS[themeState.font] || TH_FONTS.sans).stack;
+  const pv = $("#theme-preview");
+  pv.style.background = bg; pv.style.color = text; pv.style.fontFamily = font; pv.style.borderColor = dark ? "#2a2a38" : "#e6e2dc";
+  pv.innerHTML = `<div class="tp-h">Your Business</div>
+    <div style="color:${muted};font-size:.88rem">A preview of your site's colours and font${themeState.mode === "auto" ? " (auto light &amp; dark)" : ""}.</div>
+    <span class="tp-btn" style="background:${esc(themeState.accent)};color:#fff">Get in touch</span>
+    <span class="tp-btn" style="background:transparent;border:1px solid ${esc(themeState.accent2)};color:${esc(themeState.accent2)};margin-left:.5rem">Learn more</span>`;
+}
+$("#th-accent").addEventListener("input", () => { themeState.accent = $("#th-accent").value; themeState.preset = null; syncThemeInputs(); updateThemePreview(); });
+$("#th-accent2").addEventListener("input", () => { themeState.accent2 = $("#th-accent2").value; themeState.preset = null; syncThemeInputs(); updateThemePreview(); });
+$("#th-font").addEventListener("change", () => { themeState.font = $("#th-font").value; themeState.preset = null; syncThemeInputs(); updateThemePreview(); });
+$("#th-mode").addEventListener("change", () => { themeState.mode = $("#th-mode").value; themeState.preset = null; syncThemeInputs(); updateThemePreview(); });
+function renderTheme(){
+  const show = !current.kind || /web/i.test(current.kind);
+  $("#theme-panel").classList.toggle("hidden", !show);
+  if (!show) return;
+  themeState = (current.theme && typeof current.theme === "object") ? { ...TH_DEFAULT, ...current.theme } : { ...TH_DEFAULT };
+  fillFontSelect(); renderThemePresets(); syncThemeInputs(); updateThemePreview(); $("#theme-msg").innerHTML = "";
+}
+$("#save-theme").addEventListener("click", async () => {
+  $("#save-theme").disabled = true;
+  try {
+    const saved = await api("/api/projects/" + current.id + "/theme", { method: "PUT", body: JSON.stringify(themeState) });
+    current.theme = (saved && saved.theme) || themeState;
+    note($("#theme-msg"), "ok", "Theme saved — we'll use this as your starting point.");
+  } catch (e){ note($("#theme-msg"), "err", e.message); }
+  finally { $("#save-theme").disabled = false; }
 });
 
 async function renderImages(){

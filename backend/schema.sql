@@ -24,6 +24,7 @@ create table if not exists projects (
   notes      text,
   web_url    text,
   next_step  text,
+  theme      jsonb,                                 -- client's preferred website theme (colours/font/mode)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),   -- bumped when the studio changes the project (client's ping)
   client_updated_at timestamptz                    -- bumped when the client acts (admin's ping)

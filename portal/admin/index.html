@@ -133,6 +133,7 @@ label{display:block;font-size:.8rem;font-weight:560;color:var(--text-soft);margi
       <p class="muted" style="margin-bottom:.3rem">What the project is</p><p id="p-brief">—</p>
       <p class="muted" style="margin:.8rem 0 .3rem">Notes</p><p id="p-notes">—</p>
     </div>
+    <div class="card panel" id="a-theme-panel"><h2>Chosen theme <span class="pdot hidden" id="a-ping-theme"></span></h2><div id="a-theme-view"></div></div>
     <div class="card panel"><h2>Images <span class="pdot hidden" id="a-ping-img"></span></h2><div class="thumbs" id="p-thumbs"></div><p class="muted" id="no-img"></p></div>
     <div class="card panel hidden" id="a-typo-panel">
       <h2>Typography <span class="pdot hidden" id="a-ping-typo"></span></h2>
@@ -231,6 +232,7 @@ async function openProject(p){
   const biCur=JSON.stringify([p.brief,p.notes]); const biPrev=store.get("abi_"+p.id);
   $("#a-ping-brief").classList.toggle("hidden", !(biPrev!==null && biPrev!==biCur));
   store.set("abi_"+p.id, biCur);
+  aRenderTheme(p);
   let imgs=[]; try{ imgs=await api("/api/projects/"+p.id+"/images"); }catch{}
   $("#p-thumbs").innerHTML=imgs.map(im=>`<div class="thumb"><img src="${esc(im.url)}" onerror="this.style.opacity=.2"></div>`).join("");
   $("#no-img").textContent=imgs.length?"":"No images yet.";
@@ -239,6 +241,26 @@ async function openProject(p){
   store.set("aimg_"+p.id, imgCur);
   aRenderTypo();
   loadThread();
+}
+
+// ── chosen website theme (read-only) ──────────────────
+const A_TH_FONTS={sans:"System sans",serif:"Elegant serif",rounded:"Rounded",mono:"Modern mono"};
+function aRenderTheme(p){
+  const show = !p.kind || /web/i.test(p.kind||"");
+  $("#a-theme-panel").classList.toggle("hidden", !show);
+  if(!show) return;
+  const t=p.theme;
+  const cur=JSON.stringify(t||null), prev=store.get("ath_"+p.id);
+  $("#a-ping-theme").classList.toggle("hidden", !(prev!==null && prev!==cur));
+  store.set("ath_"+p.id, cur);
+  if(!t){ $("#a-theme-view").innerHTML=`<p class="muted">Client hasn't chosen a theme yet.</p>`; return; }
+  const sw=c=>`<span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:${esc(c||"#ccc")};border:1px solid var(--line);vertical-align:middle"></span>`;
+  $("#a-theme-view").innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:1.4rem;align-items:flex-start">
+    <div><span class="muted">Colours</span><br>${sw(t.accent)} ${sw(t.accent2)} <span class="muted" style="font-size:.8rem">${esc(t.accent||"")} · ${esc(t.accent2||"")}</span></div>
+    <div><span class="muted">Font</span><br><b>${esc(A_TH_FONTS[t.font]||t.font||"—")}</b></div>
+    <div><span class="muted">Appearance</span><br><b>${esc(t.mode||"—")}</b></div>
+    ${t.preset?`<div><span class="muted">Preset</span><br><b>${esc(t.preset)}</b></div>`:""}
+  </div>`;
 }
 
 // ── typography (website perk) ─────────────────────────
