@@ -26,8 +26,8 @@ const replaceOne = (html, find, repl, label) => {
 };
 
 /* Thai metadata (hand-written — refine as needed). */
-const TH_TITLE   = "รับทำเว็บไซต์ เชียงใหม่ &amp; ทั่วไทย — ZZDigital";
-const TH_DESC    = "ZZDigital สตูดิโอดิจิทัลในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้และโฮสติ้ง สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย เริ่มต้น ฿3,000";
+const TH_TITLE   = "รับทำเว็บไซต์ เชียงใหม่ &amp; ทั่วไทย — Vibe Crafted";
+const TH_DESC    = "Vibe Crafted สตูดิโอดิจิทัลในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้และโฮสติ้ง สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย เริ่มต้น ฿3,000";
 const TH_OG_DESC = "เว็บไซต์ โลโก้ และโฮสติ้งที่สร้างด้วยมือ โหลดเร็ว สำหรับธุรกิจในเชียงใหม่และทั่วไทย เริ่มต้น ฿3,000";
 const TH_TW_DESC = "เว็บไซต์และโลโก้ที่สร้างด้วยมือ เปิดตัวได้ในสองสัปดาห์";
 const TH_PS_DESC = "สตูดิโอดิจิทัลคนเดียวในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้และโฮสติ้ง สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย";
@@ -51,7 +51,7 @@ const FAQ_EN = {
 let html = src;
 
 /* 2. <html lang> */
-html = replaceOne(html, '<html lang="en" data-theme="dark">', '<html lang="th" data-theme="dark">', "html lang");
+html = replaceOne(html, '<html lang="en">', '<html lang="th">', "html lang");
 
 /* 3. Placeholders (data-i18n-ph) — do before leaf pass. */
 ["form.name.ph", "form.biz.ph", "form.msg.ph"].forEach(key => {
@@ -72,7 +72,7 @@ Object.keys(TH).forEach(key => {
 });
 
 /* 6. Title + social meta */
-html = replaceOne(html, "Web Design in Chiang Mai &amp; Thailand — ZZDigital", TH_TITLE, "title/og:title/twitter:title");
+html = replaceOne(html, "Web Design in Chiang Mai &amp; Thailand — Vibe Crafted", TH_TITLE, "title/og:title/twitter:title");
 html = replaceOne(html, "Fast, hand-built websites, logos and hosting for restaurants, resorts and local businesses in Chiang Mai and across Thailand. Launch in two weeks — from ฿3,000.", TH_DESC, "meta description");
 html = replaceOne(html, "Fast, hand-built websites, logos and hosting for restaurants, resorts and local businesses in Chiang Mai and across Thailand. From ฿3,000.", TH_OG_DESC, "og:description");
 html = replaceOne(html, "Fast, hand-built websites, logos and hosting. Launch in two weeks.", TH_TW_DESC, "twitter:description");
@@ -82,7 +82,7 @@ html = replaceOne(html, '<link rel="canonical" href="https://zzdigitaldesign.com
 html = replaceOne(html, '<meta property="og:url" content="https://zzdigitaldesign.com/">', '<meta property="og:url" content="https://zzdigitaldesign.com/th/">', "og:url");
 html = replaceOne(html, '<meta property="og:locale" content="en_US">', '<meta property="og:locale" content="th_TH">', "og:locale");
 html = replaceOne(html, '<meta property="og:locale:alternate" content="th_TH">', '<meta property="og:locale:alternate" content="en_US">', "og:locale:alternate");
-html = replaceOne(html, 'content="ZZDigital — Small studio. Serious websites.">', 'content="ZZDigital — สตูดิโอเล็ก ๆ เว็บไซต์ที่จริงจัง">', "og:image:alt");
+html = replaceOne(html, 'content="Vibe Crafted — Small studio. Serious websites.">', 'content="Vibe Crafted — สตูดิโอเล็ก ๆ เว็บไซต์ที่จริงจัง">', "og:image:alt");
 
 /* 8. JSON-LD — ProfessionalService description + FAQ to Thai */
 html = replaceOne(html, TH_PS_DESC ? "One-person digital studio in Chiang Mai building fast, hand-built websites, logos and hosting for restaurants, resorts and local businesses across Thailand." : "", TH_PS_DESC, "ProfessionalService description");

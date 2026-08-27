@@ -3,39 +3,42 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Client Portal — ZZ Digital</title>
+<title>Client Portal — Vibe Crafted</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#0a0a0f" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%236d5efc'/><path d='M28 32h44L34 68h40' stroke='%23fff' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230C0C0C'/><polygon fill='%23fff' points='8,10 31.5,10 50,68.5 68.5,10 92,10 50,92'/><polyline fill='none' stroke='%230C0C0C' stroke-width='5.5' points='16.5,49 33,38.5 50,55.5 67,39 83.5,50.5'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#fbfaf8;--surface:#fff;--surface-2:#f7f5f2;--text:#131118;--text-soft:#4a4652;--text-muted:#7b7684;
-  --line:#e6e2dc;--line-strong:#d5d0c8;--accent:#6d5efc;--accent-ink:#fff;
-  --grad:linear-gradient(100deg,#6d5efc 0%,#8b5cf6 38%,#0fb894 100%);--mint:#0fb894;--amber:#e0a400;--red:#d64545;
-  --r-lg:20px;--r-sm:10px;--shadow-sm:0 1px 2px rgba(19,17,24,.06),0 2px 8px rgba(19,17,24,.04);
-  --pad:clamp(1rem,4vw,2rem);--font:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --bg:#ffffff;--surface:#ffffff;--surface-2:#f7f7f7;--text:#0c0c0c;--text-soft:#404040;--text-muted:#6b6b6b;
+  --line:#e5e5e5;--line-strong:#d4d4d4;--accent:#0c0c0c;--accent-ink:#fff;
+  --grad:linear-gradient(120deg,#0c0c0c 0%,#262626 100%);--mint:#14b8a6;--amber:#e0a400;--red:#d64545;
+  --r-lg:16px;--r-sm:8px;--shadow-sm:0 1px 2px rgba(12,12,12,.06),0 2px 8px rgba(12,12,12,.04);
+  --pad:clamp(1rem,4vw,2rem);
+  --font:"Inter",system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+  --display:"Space Grotesk","Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0a0a0f;--surface:#12121b;--surface-2:#191924;--text:#f4f3f8;--text-soft:#bdb9c9;--text-muted:#8d889c;
-  --line:#23232f;--line-strong:#33333f;--accent:#8b7dff;--grad:linear-gradient(100deg,#8b7dff 0%,#a78bfa 38%,#2ee0b5 100%);--mint:#2ee0b5;--shadow-sm:0 1px 2px rgba(0,0,0,.5);
-}}
 :root[data-theme="dark"]{
-  --bg:#0a0a0f;--surface:#12121b;--surface-2:#191924;--text:#f4f3f8;--text-soft:#bdb9c9;--text-muted:#8d889c;
-  --line:#23232f;--line-strong:#33333f;--accent:#8b7dff;--grad:linear-gradient(100deg,#8b7dff 0%,#a78bfa 38%,#2ee0b5 100%);--mint:#2ee0b5;--shadow-sm:0 1px 2px rgba(0,0,0,.5);
+  --bg:#0c0c0c;--surface:#161616;--surface-2:#1f1f1f;--text:#f0f0f0;--text-soft:#d4d4d4;--text-muted:#a3a3a3;
+  --line:#262626;--line-strong:#404040;--accent:#f0f0f0;--accent-ink:#0c0c0c;--grad:linear-gradient(120deg,#f0f0f0 0%,#a3a3a3 100%);--mint:#2dd4bf;--shadow-sm:0 1px 2px rgba(0,0,0,.5);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.02em}
 a{color:inherit}
 .shell{max-width:70rem;margin-inline:auto;padding-inline:var(--pad)}
 .topbar{display:flex;align-items:center;gap:1rem;height:4rem;border-bottom:1px solid var(--line)}
-.brand{display:inline-flex;align-items:center;gap:.5rem;font-weight:680;letter-spacing:-.02em;text-decoration:none;margin-inline-end:auto}
+.brand{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--display);font-weight:600;letter-spacing:-.02em;text-decoration:none;margin-inline-end:auto}
 .nav{display:flex;gap:.15rem;align-items:center}
 .nav a{color:var(--text-soft);text-decoration:none;font-size:.88rem;font-weight:520;padding:.4rem .55rem;border-radius:8px}
 .nav a:hover{color:var(--text);background:var(--surface-2)}
 @media(max-width:860px){.nav{display:none}}
-.mark{width:28px;height:28px;border-radius:8px;background:var(--grad);display:grid;place-items:center}
-.mark svg{width:17px;height:17px}
+.mark{width:28px;height:28px;display:grid;place-items:center}
+.mark svg{width:26px;height:26px}
+.mark .v-body{fill:var(--text)}.mark .v-pulse{fill:none;stroke:var(--bg);stroke-width:5.5;stroke-linejoin:miter}
 .btn{display:inline-flex;align-items:center;gap:.45rem;font:inherit;font-weight:560;font-size:.9rem;text-decoration:none;padding:.6rem 1rem;border-radius:100px;border:0;cursor:pointer}
 .btn--primary{background:var(--accent);color:var(--accent-ink)}
 .btn--ghost{border:1px solid var(--line-strong);color:var(--text);background:transparent}
@@ -43,7 +46,6 @@ a{color:inherit}
 .btn[disabled]{opacity:.55;cursor:default}
 .icon-btn{width:36px;height:36px;border:1px solid var(--line);border-radius:100px;background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--text)}
 .icon-sun{display:none}:root[data-theme="dark"] .icon-sun{display:block}:root[data-theme="dark"] .icon-moon{display:none}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .icon-sun{display:block}:root:not([data-theme="light"]) .icon-moon{display:none}}
 input,textarea{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:.6rem .75rem;width:100%}
 input:focus,textarea:focus{outline:2px solid var(--accent);border-color:transparent}
 label{display:block;font-size:.82rem;font-weight:560;color:var(--text-soft);margin-bottom:.3rem}
@@ -111,7 +113,7 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
 <!-- LOGIN -->
 <section id="view-login">
   <div class="shell"><div class="topbar">
-    <a class="brand" href="https://zzdigitaldesign.com/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
+    <a class="brand" href="https://zzdigitaldesign.com/"><span class="mark"><svg viewBox="0 0 100 100" fill="none"><polygon class="v-body" points="8,10 31.5,10 50,68.5 68.5,10 92,10 50,92"/><polyline class="v-pulse" points="16.5,49 33,38.5 50,55.5 67,39 83.5,50.5"/></svg></span>Vibe Crafted</a>
     <nav class="nav">
       <a href="https://zzdigitaldesign.com/#services">Services</a><a href="https://zzdigitaldesign.com/#work">Work</a><a href="https://zzdigitaldesign.com/#process">Process</a><a href="https://zzdigitaldesign.com/#pricing">Pricing</a><a href="https://zzdigitaldesign.com/#faq">FAQ</a>
     </nav>
@@ -137,7 +139,7 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
 <!-- APP -->
 <section id="view-app" class="hidden">
   <div class="shell"><div class="topbar">
-    <a class="brand" href="https://zzdigitaldesign.com/"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h11L7 17h11"/></svg></span>ZZ Digital</a>
+    <a class="brand" href="https://zzdigitaldesign.com/"><span class="mark"><svg viewBox="0 0 100 100" fill="none"><polygon class="v-body" points="8,10 31.5,10 50,68.5 68.5,10 92,10 50,92"/><polyline class="v-pulse" points="16.5,49 33,38.5 50,55.5 67,39 83.5,50.5"/></svg></span>Vibe Crafted</a>
     <nav class="nav">
       <a href="https://zzdigitaldesign.com/#services">Services</a><a href="https://zzdigitaldesign.com/#work">Work</a><a href="https://zzdigitaldesign.com/#process">Process</a><a href="https://zzdigitaldesign.com/#pricing">Pricing</a><a href="https://zzdigitaldesign.com/#faq">FAQ</a>
     </nav>
@@ -150,7 +152,7 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
   </div></div>
 
   <div class="shell" id="dashboard">
-    <div class="app-head"><h1>Your projects</h1><p>Everything ZZ Digital is building for you, in one place.</p></div>
+    <div class="app-head"><h1>Your projects</h1><p>Everything Vibe Crafted is building for you, in one place.</p></div>
     <div class="grid" id="proj-list"></div>
     <p class="muted" id="no-proj" style="margin-top:1rem"></p>
   </div>
@@ -224,14 +226,14 @@ footer{border-top:1px solid var(--line);padding-block:1.4rem;color:var(--text-mu
     </div>
 
     <div class="card panel">
-      <h2>Messages with ZZ Digital <span class="pdot hidden" id="ping-msg"></span></h2>
+      <h2>Messages with Vibe Crafted <span class="pdot hidden" id="ping-msg"></span></h2>
       <div id="thread"></div>
       <div class="urlrow"><input id="reply" placeholder="Type a message…"><button class="btn btn--primary btn--sm" id="send-msg">Send</button></div>
     </div>
   </div>
 </section>
 
-<footer>ZZ Digital · Client portal</footer>
+<footer>Vibe Crafted · Client portal</footer>
 
 <script>
 (() => {
@@ -250,7 +252,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const store = { get(k){try{return localStorage.getItem(k);}catch{return null;}}, set(k,v){try{localStorage.setItem(k,v);}catch{}} };
 const root = document.documentElement;
-root.dataset.theme = store.get("zz-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+root.dataset.theme = store.get("zz-theme") || "light";
 const toggleTheme = () => { const n = root.dataset.theme === "dark" ? "light" : "dark"; store.set("zz-theme", n); root.dataset.theme = n; };
 $("#theme").addEventListener("click", toggleTheme); $("#theme2").addEventListener("click", toggleTheme);
 
@@ -270,7 +272,7 @@ let mode = "signin";
 function setMode(m){
   mode = m; const su = m === "signup";
   $("#login-title").textContent = su ? "Create your account" : "Client sign in";
-  $("#login-sub").textContent = su ? "Set up access to your projects with ZZ Digital." : "Manage your projects, share details and images, and message support.";
+  $("#login-sub").textContent = su ? "Set up access to your projects with Vibe Crafted." : "Manage your projects, share details and images, and message support.";
   $("#f-name").classList.toggle("hidden", !su);
   $("#f-biz").classList.toggle("hidden", !su);
   $("#signin").textContent = su ? "Create account" : "Sign in";
@@ -311,7 +313,7 @@ async function openDashboard(){
   let projects;
   try { projects = await api("/api/projects"); } catch (e){ $("#proj-list").innerHTML = ""; $("#no-proj").textContent = e.message; return; }
   const list = $("#proj-list");
-  if (!projects.length){ list.innerHTML = ""; $("#no-proj").textContent = "No projects yet — ZZ Digital will add them here."; return; }
+  if (!projects.length){ list.innerHTML = ""; $("#no-proj").textContent = "No projects yet — Vibe Crafted will add them here."; return; }
   $("#no-proj").textContent = "";
   list.innerHTML = projects.map(p => {
     const ping = store.get("seen_" + p.id) !== p.updated_at ? '<span class="ping" title="New update"></span>' : "";
@@ -575,7 +577,7 @@ async function renderThread(){
   $("#ping-msg").classList.toggle("hidden", !(latestStudio && mPrev !== null && mPrev !== latestStudio.created_at));
   store.set("cmsg_" + current.id, latestStudio ? latestStudio.created_at : "");
   $("#thread").innerHTML = msgs.length
-    ? msgs.map(m => `<div class="msg ${m.sender}"><div class="who">${m.sender === "studio" ? "ZZ Digital" : "You"}</div>${esc(m.body)}</div>`).join("")
+    ? msgs.map(m => `<div class="msg ${m.sender}"><div class="who">${m.sender === "studio" ? "Vibe Crafted" : "You"}</div>${esc(m.body)}</div>`).join("")
     : `<p class="muted">No messages yet.</p>`;
 }
 $("#send-msg").addEventListener("click", async () => {
