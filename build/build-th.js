@@ -78,8 +78,8 @@ html = replaceOne(html, "Fast, hand-built websites, logos and hosting for restau
 html = replaceOne(html, "Fast, hand-built websites, logos and hosting. Launch in two weeks.", TH_TW_DESC, "twitter:description");
 
 /* 7. Canonical + og:url + locales → Thai URL */
-html = replaceOne(html, '<link rel="canonical" href="https://zzdigitaldesign.com/">', '<link rel="canonical" href="https://zzdigitaldesign.com/th/">', "canonical");
-html = replaceOne(html, '<meta property="og:url" content="https://zzdigitaldesign.com/">', '<meta property="og:url" content="https://zzdigitaldesign.com/th/">', "og:url");
+html = replaceOne(html, '<link rel="canonical" href="https://websites.vibecraftedsoftware.com/">', '<link rel="canonical" href="https://websites.vibecraftedsoftware.com/th/">', "canonical");
+html = replaceOne(html, '<meta property="og:url" content="https://websites.vibecraftedsoftware.com/">', '<meta property="og:url" content="https://websites.vibecraftedsoftware.com/th/">', "og:url");
 html = replaceOne(html, '<meta property="og:locale" content="en_US">', '<meta property="og:locale" content="th_TH">', "og:locale");
 html = replaceOne(html, '<meta property="og:locale:alternate" content="th_TH">', '<meta property="og:locale:alternate" content="en_US">', "og:locale:alternate");
 html = replaceOne(html, 'content="Vibe Crafted — Small studio. Serious websites.">', 'content="Vibe Crafted — สตูดิโอเล็ก ๆ เว็บไซต์ที่จริงจัง">', "og:image:alt");

@@ -1,0 +1,12 @@
+﻿{
+  "Comment": "ACM DNS validation for *.vibecraftedsoftware.com",
+  "Changes": [{
+    "Action": "UPSERT",
+    "ResourceRecordSet": {
+      "Name": "_3646d815df50203c3375143439ea4bb8.vibecraftedsoftware.com.",
+      "Type": "CNAME",
+      "TTL": 300,
+      "ResourceRecords": [{ "Value": "_b4ffd7f6878eded4cbaeee4d6dd96df0.jkddzztszm.acm-validations.aws." }]
+    }
+  }]
+}
