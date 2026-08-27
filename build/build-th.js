@@ -30,7 +30,7 @@ const TH_TITLE   = "รับทำเว็บไซต์ เชียงใ�
 const TH_DESC    = "Vibe Crafted สตูดิโอดิจิทัลในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้และโฮสติ้ง สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย เริ่มต้น ฿3,000";
 const TH_OG_DESC = "เว็บไซต์ โลโก้ และโฮสติ้งที่สร้างด้วยมือ โหลดเร็ว สำหรับธุรกิจในเชียงใหม่และทั่วไทย เริ่มต้น ฿3,000";
 const TH_TW_DESC = "เว็บไซต์และโลโก้ที่สร้างด้วยมือ เปิดตัวได้ในสองสัปดาห์";
-const TH_PS_DESC = "สตูดิโอดิจิทัลคนเดียวในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้และโฮสติ้ง สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย";
+const TH_PS_DESC = "สตูดิโอดิจิทัลในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้และโฮสติ้ง สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย";
 
 /* English FAQ strings (as they appear in the JSON-LD) → mapped to Thai by key. */
 const FAQ_EN = {
@@ -85,7 +85,7 @@ html = replaceOne(html, '<meta property="og:locale:alternate" content="th_TH">',
 html = replaceOne(html, 'content="Vibe Crafted — Small studio. Serious websites.">', 'content="Vibe Crafted — สตูดิโอเล็ก ๆ เว็บไซต์ที่จริงจัง">', "og:image:alt");
 
 /* 8. JSON-LD — ProfessionalService description + FAQ to Thai */
-html = replaceOne(html, TH_PS_DESC ? "One-person digital studio in Chiang Mai building fast, hand-built websites, logos and hosting for restaurants, resorts and local businesses across Thailand." : "", TH_PS_DESC, "ProfessionalService description");
+html = replaceOne(html, TH_PS_DESC ? "Digital studio in Chiang Mai building fast, hand-built websites, logos and hosting for restaurants, resorts and local businesses across Thailand." : "", TH_PS_DESC, "ProfessionalService description");
 Object.keys(FAQ_EN).forEach(key => {
   html = replaceOne(html, FAQ_EN[key], TH[key], "JSON-LD " + key);
 });
