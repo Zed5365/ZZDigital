@@ -17,3 +17,8 @@ desktop.ini
 # Logs & temp
 *.log
 *.tmp
+
+# AWS deploy scratch
+*-validation.json
+*-dns.json
+distconfig.json
