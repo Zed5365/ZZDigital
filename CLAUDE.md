@@ -79,8 +79,12 @@ link rewrites). **Never hand-edit generated locale files** — edit the source a
 - **Bilingual:** **Yes** (EN source in `index.html` → `th/index.html` via `node build/build-th.js`)
 - **Client portal:** **Yes** — Supabase (admin-created + public sign-up); `/portal/` (client),
   `/portal/admin/` (admin, gated by `is_admin`)
-- **Static infra:** S3 bucket `zzdigitaldesign.com` (`ap-southeast-1`), CloudFront `EBJNRLIZ8CTTY`,
-  Route 53 zone `Z00211972T0UGXJIDKRSH`, image bucket `zzdigital-website-images` (`us-east-1`)
+- **Static infra:** S3 bucket **`websites.vibecraftedsoftware.com`** (`ap-southeast-1`, public
+  static-website endpoint; deploy target), CloudFront `EBJNRLIZ8CTTY`, Route 53 zones
+  `Z00211972T0UGXJIDKRSH` (zzdigitaldesign.com) + `Z06117583DJPW9PSW2YWH` (vibecraftedsoftware.com),
+  image bucket `zzdigital-website-images` (`us-east-1`). Live at
+  `https://websites.vibecraftedsoftware.com`; `zzdigitaldesign.com` 301-redirects there via the
+  CloudFront function `zzdigital-www-to-apex`. (Old `zzdigitaldesign.com` bucket retired.)
 - **Backend:** Supabase project `vdgdbjesjoyfkfhqgdna` (`https://vdgdbjesjoyfkfhqgdna.supabase.co`);
   tables `clients / projects / project_images / support_messages / admins`; setup in
   `supabase/schema.sql` + `supabase/admin.sql`. Anon key is public; never add the service_role key.
@@ -88,6 +92,7 @@ link rewrites). **Never hand-edit generated locale files** — edit the source a
   gradient violet→mint; bg `#fbfaf8` / `#0a0a0f`
 - **Contact / forms:** Web3Forms → `info@zzdigital.awsapps.com`; phone/LINE `+66 83 9696 555`
 - **Deploy:** rebuild Thai (`node build/build-th.js`) if `index.html`/`TH` changed, then
-  `aws s3 cp` each changed file (see Static conventions), then invalidate `EBJNRLIZ8CTTY` with `/*`
+  `aws s3 cp <file> s3://websites.vibecraftedsoftware.com/<path>` each changed file (see Static
+  conventions), then invalidate `EBJNRLIZ8CTTY` with `/*`
 - **Brand:** name `ZZDigital` in titles/meta/schema; visible nav wordmark `ZZ Digital`
 - **More detail:** `docs/SEO-PLAYBOOK.md` (SEO plan + audit)
