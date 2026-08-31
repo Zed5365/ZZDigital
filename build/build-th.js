@@ -27,8 +27,8 @@ const replaceOne = (html, find, repl, label) => {
 
 /* Thai metadata (hand-written — refine as needed). */
 const TH_TITLE   = "รับทำเว็บไซต์ เชียงใหม่ &amp; ทั่วไทย — Vibe Crafted";
-const TH_DESC    = "Vibe Crafted สตูดิโอดิจิทัลในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้ สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย เริ่มต้น ฿3,000";
-const TH_OG_DESC = "เว็บไซต์และโลโก้ที่สร้างด้วยมือ โหลดเร็ว สำหรับธุรกิจในเชียงใหม่และทั่วไทย เริ่มต้น ฿3,000";
+const TH_DESC    = "Vibe Crafted สตูดิโอดิจิทัลในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้ สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย เริ่มต้น ฿2,999";
+const TH_OG_DESC = "เว็บไซต์และโลโก้ที่สร้างด้วยมือ โหลดเร็ว สำหรับธุรกิจในเชียงใหม่และทั่วไทย เริ่มต้น ฿2,999";
 const TH_TW_DESC = "เว็บไซต์และโลโก้ที่สร้างด้วยมือ เปิดตัวได้ในสองสัปดาห์";
 const TH_PS_DESC = "สตูดิโอดิจิทัลในเชียงใหม่ รับทำเว็บไซต์โหลดเร็วสร้างด้วยมือ พร้อมโลโก้ สำหรับร้านอาหาร รีสอร์ต และธุรกิจท้องถิ่นทั่วไทย";
 
@@ -71,8 +71,8 @@ Object.keys(TH).forEach(key => {
 
 /* 6. Title + social meta */
 html = replaceOne(html, "Web Design in Chiang Mai &amp; Thailand — Vibe Crafted", TH_TITLE, "title/og:title/twitter:title");
-html = replaceOne(html, "Fast, hand-built websites and logos for restaurants, resorts and local businesses in Chiang Mai and across Thailand. Launch in two weeks — from ฿3,000.", TH_DESC, "meta description");
-html = replaceOne(html, "Fast, hand-built websites and logos for restaurants, resorts and local businesses in Chiang Mai and across Thailand. From ฿3,000.", TH_OG_DESC, "og:description");
+html = replaceOne(html, "Fast, hand-built websites and logos for restaurants, resorts and local businesses in Chiang Mai and across Thailand. Launch in two weeks — from ฿2,999.", TH_DESC, "meta description");
+html = replaceOne(html, "Fast, hand-built websites and logos for restaurants, resorts and local businesses in Chiang Mai and across Thailand. From ฿2,999.", TH_OG_DESC, "og:description");
 html = replaceOne(html, "Fast, hand-built websites and logos. Launch in two weeks.", TH_TW_DESC, "twitter:description");
 
 /* 7. Canonical + og:url + locales → Thai URL */
